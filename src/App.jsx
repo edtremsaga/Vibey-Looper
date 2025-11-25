@@ -66,6 +66,7 @@ function App() {
   const [validationError, setValidationError] = useState('')
   const [showCompletion, setShowCompletion] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [playbackSpeed, setPlaybackSpeed] = useState(1)
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -116,11 +117,15 @@ function App() {
             playsinline: 1,
           },
           events: {
-            onReady: (event) => {
-              console.log('YouTube player ready')
-              setPlayer(event.target)
-              setIsLoading(false)
-            },
+          onReady: (event) => {
+            console.log('YouTube player ready')
+            setPlayer(event.target)
+            setIsLoading(false)
+            // Set initial playback speed
+            if (event.target.setPlaybackRate) {
+              event.target.setPlaybackRate(playbackSpeed)
+            }
+          },
             onError: (event) => {
               console.error('YouTube player error:', event.data)
               setIsLoading(false)
@@ -170,6 +175,17 @@ function App() {
     }
   }, [startTime, endTime])
 
+  // Update playback speed when it changes
+  useEffect(() => {
+    if (player && player.setPlaybackRate) {
+      try {
+        player.setPlaybackRate(playbackSpeed)
+      } catch (error) {
+        console.error('Error setting playback rate:', error)
+      }
+    }
+  }, [playbackSpeed, player])
+
   // Check video time and handle looping
   useEffect(() => {
     if (isPlaying && player) {
@@ -204,9 +220,12 @@ function App() {
                   return newCount
                 }
                 
-                // Seek back to start time
+                // Seek back to start time and maintain playback speed
                 if (player.seekTo) {
                   player.seekTo(startTime, true)
+                }
+                if (player.setPlaybackRate) {
+                  player.setPlaybackRate(playbackSpeed)
                 }
                 
                 return newCount
@@ -237,7 +256,7 @@ function App() {
         clearTimeout(completionTimeoutRef.current)
       }
     }
-  }, [isPlaying, player, startTime, endTime, targetLoops])
+  }, [isPlaying, player, startTime, endTime, targetLoops, playbackSpeed])
 
   const handleStart = useCallback(() => {
     if (!player || validationError || endTime <= startTime) return
@@ -247,11 +266,16 @@ function App() {
     hasLoopedRef.current = false
     setShowCompletion(false)
     
+    // Set playback speed before starting
+    if (player.setPlaybackRate) {
+      player.setPlaybackRate(playbackSpeed)
+    }
+    
     // Seek to start time and play
     player.seekTo(startTime, true)
     player.playVideo()
     setIsPlaying(true)
-  }, [player, validationError, endTime, startTime])
+  }, [player, validationError, endTime, startTime, playbackSpeed])
 
   const handleStop = useCallback(() => {
     if (player && player.pauseVideo) {
@@ -383,6 +407,7 @@ function App() {
                   <ul>
                     <li>Click "Stop" (red button) to pause the loop</li>
                     <li>Click "Reset" (blue button) to return to the start time and reset the loop counter</li>
+                    <li>Use the "Playback Speed" dropdown to adjust video speed (0.25x to 2x)</li>
                   </ul>
                 </li>
               </ol>
@@ -477,6 +502,27 @@ function App() {
             min="1"
             disabled={isPlaying}
           />
+        </div>
+      </div>
+
+      <div className="speed-control-row">
+        <div className="input-group">
+          <label htmlFor="playback-speed">Playback Speed</label>
+          <select
+            id="playback-speed"
+            value={playbackSpeed}
+            onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+            className="speed-select"
+          >
+            <option value={0.25}>0.25x (Slow)</option>
+            <option value={0.5}>0.5x</option>
+            <option value={0.75}>0.75x</option>
+            <option value={1}>1x (Normal)</option>
+            <option value={1.25}>1.25x</option>
+            <option value={1.5}>1.5x</option>
+            <option value={1.75}>1.75x</option>
+            <option value={2}>2x (Fast)</option>
+          </select>
         </div>
       </div>
 
