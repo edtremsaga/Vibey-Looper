@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { Analytics } from '@vercel/analytics/react'
 import App from './App.jsx'
 import './index.css'
 
@@ -12,7 +13,12 @@ try {
   }
   
   const root = ReactDOM.createRoot(rootElement)
-  root.render(<App />)
+  root.render(
+    <>
+      <App />
+      <Analytics />
+    </>
+  )
   
   console.log('App rendered successfully')
 } catch (error) {
