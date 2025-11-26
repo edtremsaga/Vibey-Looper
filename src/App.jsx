@@ -365,9 +365,6 @@ function App() {
           <h1 className="title">Music Looper</h1>
           <span className="title-byline">by Vibey Craft</span>
         </div>
-        <button className="help-link" onClick={() => setShowHelp(true)}>
-          ?
-        </button>
       </div>
       <p className="subtitle">Loop sections of songs</p>
       
@@ -583,19 +580,26 @@ function App() {
         )}
       </div>
 
-      {/* Completion notification */}
-      {showCompletion && (
-        <div className="completion-notification">
-          <div className="completion-content">
-            <span className="completion-icon">✓</span>
-            <span className="completion-text">
-              Completed {targetLoops} loop{targetLoops !== 1 ? 's' : ''}!
-            </span>
+          {/* Completion notification */}
+          {showCompletion && (
+            <div className="completion-notification">
+              <div className="completion-content">
+                <span className="completion-icon">✓</span>
+                <span className="completion-text">
+                  Completed {targetLoops} loop{targetLoops !== 1 ? 's' : ''}!
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Help link at bottom */}
+          <div className="help-link-bottom">
+            <button className="help-link-text" onClick={() => setShowHelp(true)}>
+              help
+            </button>
           </div>
         </div>
-      )}
-    </div>
-  )
-}
+      )
+    }
 
-export default App
+    export default App
