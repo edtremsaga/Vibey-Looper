@@ -362,7 +362,7 @@ function App() {
     <div className="app">
       <div className="title-section">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <h1 className="title">YouTube Music Looper</h1>
+          <h1 className="title">Music Looper</h1>
           <span className="title-byline">by Vibey Craft</span>
         </div>
         <button className="help-link" onClick={() => setShowHelp(true)}>
@@ -430,13 +430,13 @@ function App() {
       )}
       
       <div className="input-group">
-        <label htmlFor="video-id">YouTube URL or Video ID</label>
+        <label htmlFor="video-id">URL or Video ID of song from YouTube</label>
         <input
           id="video-id"
           type="text"
           value={videoId}
           onChange={(e) => handleVideoIdChange(e.target.value)}
-          placeholder="Enter YouTube URL or Video ID"
+          placeholder="Enter URL or Video ID of song from YouTube"
           disabled={!apiReady}
           autoFocus
         />
