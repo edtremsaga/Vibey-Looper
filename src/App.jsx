@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import './App.css'
 
 // Helper functions
@@ -118,7 +118,6 @@ function App() {
           },
           events: {
           onReady: (event) => {
-            console.log('YouTube player ready')
             setPlayer(event.target)
             setIsLoading(false)
             // Set initial playback speed
@@ -127,7 +126,6 @@ function App() {
             }
           },
             onError: (event) => {
-              console.error('YouTube player error:', event.data)
               setIsLoading(false)
               setValidationError('Failed to load video. Please check the URL or Video ID.')
               playerInitializedRef.current = false
@@ -135,9 +133,8 @@ function App() {
           },
         })
       } catch (error) {
-        console.error('Error creating YouTube player:', error)
         setIsLoading(false)
-        setValidationError('Error initializing video player.')
+        setValidationError('Error initializing video player. Please refresh the page and try again.')
         playerInitializedRef.current = false
       }
     }, 200)
@@ -160,8 +157,8 @@ function App() {
         hasLoopedRef.current = false
         setTimeout(() => setIsLoading(false), 1000)
       } catch (error) {
-        console.error('Error loading video:', error)
         setIsLoading(false)
+        setValidationError('Error loading video. Please check the URL or Video ID and try again.')
       }
     }
   }, [videoId, player])
@@ -181,7 +178,7 @@ function App() {
       try {
         player.setPlaybackRate(playbackSpeed)
       } catch (error) {
-        console.error('Error setting playback rate:', error)
+        // Silently handle playback rate errors (may fail if video isn't ready)
       }
     }
   }, [playbackSpeed, player])
@@ -298,24 +295,28 @@ function App() {
     hasLoopedRef.current = false
   }, [player, startTime])
 
-  const handleVideoIdChange = (newVideoId) => {
+  const handleVideoIdChange = useCallback((newVideoId) => {
     setVideoId(newVideoId)
     setValidationError('')
     // Video loading will be handled by the useEffect watching videoId
-  }
+  }, [])
 
-  // Calculate progress within loop segment
-  const getLoopProgress = () => {
+  // Memoize progress calculations to avoid recalculating on every render
+  const loopProgress = useMemo(() => {
     if (!isPlaying || endTime <= startTime) return 0
     const progress = ((currentTime - startTime) / (endTime - startTime)) * 100
     return Math.max(0, Math.min(100, progress))
-  }
+  }, [isPlaying, currentTime, startTime, endTime])
 
-  // Calculate overall loop progress percentage
-  const getOverallProgress = () => {
+  const overallProgress = useMemo(() => {
     if (targetLoops === 0) return 0
     return Math.round((currentLoops / targetLoops) * 100)
-  }
+  }, [currentLoops, targetLoops])
+
+  // Memoize formatted time strings to avoid recalculating on every render
+  const startTimeFormatted = useMemo(() => secondsToMMSS(startTime), [startTime])
+  const endTimeFormatted = useMemo(() => secondsToMMSS(endTime), [endTime])
+  const currentTimeFormatted = useMemo(() => secondsToMMSS(currentTime), [currentTime])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -357,17 +358,15 @@ function App() {
     }
   }, [isPlaying, player, validationError, startTime, endTime, showHelp, handleStart, handleStop, handleReset])
 
-  console.log('App rendering, player:', !!player, 'apiReady:', apiReady)
-
   return (
     <div className="app">
       <div className="title-section">
-        <h1 className="title">Vibey YouTube Loop Practice</h1>
+        <h1 className="title">Vibey YouTube Music Looper</h1>
         <button className="help-link" onClick={() => setShowHelp(true)}>
           ?
         </button>
       </div>
-      <p className="subtitle">by Vibey Craft</p>
+      <p className="subtitle">Loop sections of songs by Vibey Craft</p>
       
       {showHelp && (
         <div className="help-modal-overlay" onClick={() => setShowHelp(false)}>
@@ -532,13 +531,13 @@ function App() {
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: `${getLoopProgress()}%` }}
+              style={{ width: `${loopProgress}%` }}
             ></div>
           </div>
           <div className="progress-labels">
-            <span>{secondsToMMSS(startTime)}</span>
-            <span className="current-time">{secondsToMMSS(currentTime)}</span>
-            <span>{secondsToMMSS(endTime)}</span>
+            <span>{startTimeFormatted}</span>
+            <span className="current-time">{currentTimeFormatted}</span>
+            <span>{endTimeFormatted}</span>
           </div>
         </div>
       )}
@@ -571,12 +570,12 @@ function App() {
         <div className="status-main">
           Loop {currentLoops} / {targetLoops}
           {targetLoops > 0 && (
-            <span className="progress-percent"> ({getOverallProgress()}%)</span>
+            <span className="progress-percent"> ({overallProgress}%)</span>
           )}
         </div>
         {isPlaying && (
           <div className="current-time-display">
-            Current: {secondsToMMSS(currentTime)}
+            Current: {currentTimeFormatted}
           </div>
         )}
       </div>

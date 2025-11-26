@@ -4,8 +4,6 @@ import { Analytics } from '@vercel/analytics/react'
 import App from './App.jsx'
 import './index.css'
 
-console.log('Starting app render...')
-
 try {
   const rootElement = document.getElementById('root')
   if (!rootElement) {
@@ -19,8 +17,6 @@ try {
       <Analytics />
     </>
   )
-  
-  console.log('App rendered successfully')
 } catch (error) {
   console.error('Failed to render app:', error)
   const rootElement = document.getElementById('root')

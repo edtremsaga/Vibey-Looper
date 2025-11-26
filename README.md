@@ -1,4 +1,4 @@
-# Vibey YouTube Loop Practice 🎵
+# Vibey YouTube Music Looper 🎵
 
 A modern, beautiful web application for looping specific segments of YouTube videos for practice, study, or enjoyment. Built with React, Vite, and the YouTube IFrame Player API.
 

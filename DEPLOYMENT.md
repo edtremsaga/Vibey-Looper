@@ -1,6 +1,6 @@
 # Deployment Guide - Vercel
 
-This guide will help you deploy Vibey YouTube Loop Practice to Vercel so you can use it on any device, including your iPhone.
+This guide will help you deploy Vibey YouTube Music Looper to Vercel so you can use it on any device, including your iPhone.
 
 ## Prerequisites
 
