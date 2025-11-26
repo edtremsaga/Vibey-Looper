@@ -51,7 +51,7 @@ const extractVideoId = (input) => {
 }
 
 function App() {
-  const [videoId, setVideoId] = useState('dQw4w9WgXcQ')
+  const [videoId, setVideoId] = useState('https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1')
   const [startTime, setStartTime] = useState(0)
   const [endTime, setEndTime] = useState(10)
   const [startTimeDisplay, setStartTimeDisplay] = useState('0:00')
@@ -361,12 +361,15 @@ function App() {
   return (
     <div className="app">
       <div className="title-section">
-        <h1 className="title">Vibey YouTube Music Looper</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <h1 className="title">YouTube Music Looper</h1>
+          <span className="title-byline">by Vibey Craft</span>
+        </div>
         <button className="help-link" onClick={() => setShowHelp(true)}>
           ?
         </button>
       </div>
-      <p className="subtitle">Loop sections of songs by Vibey Craft</p>
+      <p className="subtitle">Loop sections of songs</p>
       
       {showHelp && (
         <div className="help-modal-overlay" onClick={() => setShowHelp(false)}>

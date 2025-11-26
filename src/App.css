@@ -38,6 +38,7 @@
   gap: 16px;
   width: 100%;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .title {
@@ -72,6 +73,17 @@
   pointer-events: none;
 }
 
+.title-byline {
+  font-size: 18px;
+  font-style: italic;
+  color: #ccc;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-weight: 400;
+  letter-spacing: 1px;
+  align-self: flex-end;
+  margin-bottom: 4px;
+}
+
 .help-link {
   width: 40px;
   height: 40px;
@@ -100,7 +112,7 @@
 }
 
 .subtitle {
-  font-size: 14px;
+  font-size: 16px;
   color: #ccc;
   text-align: center;
   margin-bottom: 12px;
