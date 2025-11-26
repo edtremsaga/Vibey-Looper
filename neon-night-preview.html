@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibey YouTube Music Looper - Neon Night Style Preview</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #0a0a15;
+      background-image: 
+        radial-gradient(circle at 20% 50%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(0, 191, 255, 0.15) 0%, transparent 50%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Subtle animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(0, 191, 255, 0.1) 0%, transparent 50%);
+      animation: backgroundPulse 8s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes backgroundPulse {
+      0%, 100% {
+        opacity: 0.5;
+      }
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .preview-container {
+      max-width: 800px;
+      width: 100%;
+      background: rgba(10, 10, 21, 0.9);
+      border: 1px solid rgba(138, 43, 226, 0.4);
+      box-shadow: 
+        0 0 30px rgba(138, 43, 226, 0.3),
+        0 0 60px rgba(0, 191, 255, 0.2),
+        inset 0 0 30px rgba(138, 43, 226, 0.05);
+      padding: 40px 20px;
+      border-radius: 12px;
+      position: relative;
+      z-index: 1;
+      backdrop-filter: blur(15px);
+    }
+
+    .title-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .title {
+      font-size: 38px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #8a2be2, #00bfff, #9370db, #00bfff);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 1px;
+      margin: 0;
+      filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.6));
+      animation: gradientFlow 4s ease infinite;
+    }
+
+    @keyframes gradientFlow {
+      0%, 100% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+    }
+
+    .help-link {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 191, 255, 0.7);
+      background: rgba(0, 191, 255, 0.15);
+      color: #00bfff;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 0 15px rgba(0, 191, 255, 0.5);
+    }
+
+    .help-link:hover {
+      background: rgba(0, 191, 255, 0.3);
+      border-color: #00bfff;
+      box-shadow: 0 0 25px rgba(0, 191, 255, 0.9);
+      transform: scale(1.1) rotate(90deg);
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: rgba(138, 43, 226, 0.9);
+      text-align: center;
+      margin-bottom: 30px;
+      font-style: italic;
+      text-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      color: #00bfff;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-shadow: 0 0 10px rgba(0, 191, 255, 0.6);
+    }
+
+    .input-group input,
+    .input-group select {
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(15, 15, 25, 0.8);
+      border: 1px solid rgba(138, 43, 226, 0.5);
+      color: #fff;
+      font-size: 16px;
+      border-radius: 8px;
+      transition: all 0.3s;
+      box-shadow: 
+        0 0 15px rgba(138, 43, 226, 0.2),
+        inset 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .input-group input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .input-group input:focus,
+    .input-group select:focus {
+      outline: none;
+      border-color: #00bfff;
+      box-shadow: 
+        0 0 25px rgba(0, 191, 255, 0.5),
+        inset 0 0 15px rgba(0, 191, 255, 0.1);
+      background: rgba(15, 15, 25, 1);
+    }
+
+    .controls-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .speed-control-row {
+      margin-bottom: 30px;
+    }
+
+    .buttons-row {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      padding: 16px 36px;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, rgba(138, 43, 226, 0.95), rgba(147, 112, 219, 0.95));
+      color: #fff;
+      border: 1px solid rgba(138, 43, 226, 0.7);
+      box-shadow: 
+        0 0 25px rgba(138, 43, 226, 0.5),
+        inset 0 0 15px rgba(138, 43, 226, 0.2);
+    }
+
+    .btn-start:hover {
+      background: linear-gradient(135deg, rgba(138, 43, 226, 1), rgba(147, 112, 219, 1));
+      box-shadow: 
+        0 0 40px rgba(138, 43, 226, 0.8),
+        inset 0 0 20px rgba(138, 43, 226, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .btn-stop {
+      background: linear-gradient(135deg, rgba(138, 43, 226, 0.7), rgba(75, 0, 130, 0.9));
+      color: #fff;
+      border: 1px solid rgba(138, 43, 226, 0.6);
+      box-shadow: 
+        0 0 25px rgba(138, 43, 226, 0.4),
+        inset 0 0 15px rgba(75, 0, 130, 0.2);
+    }
+
+    .btn-stop:hover {
+      background: linear-gradient(135deg, rgba(138, 43, 226, 0.9), rgba(75, 0, 130, 1));
+      box-shadow: 
+        0 0 40px rgba(138, 43, 226, 0.7),
+        inset 0 0 20px rgba(75, 0, 130, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .btn-reset {
+      background: linear-gradient(135deg, rgba(0, 191, 255, 0.95), rgba(70, 130, 180, 0.95));
+      color: #fff;
+      border: 1px solid rgba(0, 191, 255, 0.7);
+      box-shadow: 
+        0 0 25px rgba(0, 191, 255, 0.5),
+        inset 0 0 15px rgba(0, 191, 255, 0.2);
+    }
+
+    .btn-reset:hover {
+      background: linear-gradient(135deg, rgba(0, 191, 255, 1), rgba(70, 130, 180, 1));
+      box-shadow: 
+        0 0 40px rgba(0, 191, 255, 0.8),
+        inset 0 0 20px rgba(0, 191, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .progress-container {
+      margin-bottom: 30px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      background: rgba(15, 15, 25, 0.9);
+      border: 1px solid rgba(138, 43, 226, 0.4);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 
+        0 0 20px rgba(138, 43, 226, 0.3),
+        inset 0 0 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #8a2be2, #00bfff, #9370db, #00bfff);
+      background-size: 200% 100%;
+      box-shadow: 
+        0 0 25px rgba(138, 43, 226, 0.7),
+        0 0 25px rgba(0, 191, 255, 0.5);
+      animation: progressWave 3s linear infinite;
+    }
+
+    @keyframes progressWave {
+      0% {
+        background-position: 0% 50%;
+      }
+      100% {
+        background-position: 200% 50%;
+      }
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(0, 191, 255, 0.9);
+      font-weight: 600;
+      text-shadow: 0 0 10px rgba(0, 191, 255, 0.6);
+    }
+
+    .status {
+      text-align: center;
+      padding: 20px;
+      background: rgba(15, 15, 25, 0.7);
+      border: 1px solid rgba(138, 43, 226, 0.4);
+      border-radius: 10px;
+      box-shadow: 
+        0 0 30px rgba(138, 43, 226, 0.3),
+        0 0 30px rgba(0, 191, 255, 0.2),
+        inset 0 0 25px rgba(0, 191, 255, 0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    .status-main {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 
+        0 0 15px rgba(138, 43, 226, 0.7),
+        0 0 25px rgba(0, 191, 255, 0.5);
+      letter-spacing: 1px;
+    }
+
+    .progress-percent {
+      color: #00bfff;
+      text-shadow: 0 0 15px rgba(0, 191, 255, 0.9);
+    }
+
+    .video-container {
+      width: 100%;
+      max-width: 640px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 1px solid rgba(138, 43, 226, 0.4);
+      border-radius: 10px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      margin: 0 auto 30px;
+      box-shadow: 
+        0 0 40px rgba(138, 43, 226, 0.4),
+        0 0 40px rgba(0, 191, 255, 0.3);
+      position: relative;
+    }
+
+    .video-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(138, 43, 226, 0.15) 0%,
+        transparent 50%,
+        rgba(0, 191, 255, 0.15) 100%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .note {
+      margin-top: 30px;
+      padding: 15px;
+      background: rgba(15, 15, 25, 0.7);
+      border-left: 3px solid #00bfff;
+      color: rgba(138, 43, 226, 0.9);
+      font-size: 14px;
+      border-radius: 4px;
+      box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
+    }
+
+    /* Subtle neon grid overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        linear-gradient(rgba(138, 43, 226, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 191, 255, 0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <div class="title-section">
+      <h1 class="title">Vibey YouTube Music Looper</h1>
+      <button class="help-link">?</button>
+    </div>
+    <p class="subtitle">Loop sections of songs by Vibey Craft</p>
+    
+    <div class="input-group">
+      <label>YouTube URL or Video ID</label>
+      <input type="text" placeholder="Enter YouTube URL or Video ID" value="dQw4w9WgXcQ">
+    </div>
+
+    <div class="video-container">
+      <!-- Video player would go here -->
+      <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(138, 43, 226, 0.6); font-size: 24px; z-index: 2; position: relative;">
+        VIDEO PLAYER
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="input-group">
+        <label>Start Time (MM:SS)</label>
+        <input type="text" value="0:00">
+      </div>
+      <div class="input-group">
+        <label>End Time (MM:SS)</label>
+        <input type="text" value="0:10">
+      </div>
+      <div class="input-group">
+        <label>Target Loops</label>
+        <input type="number" value="5">
+      </div>
+    </div>
+
+    <div class="speed-control-row">
+      <div class="input-group">
+        <label>Playback Speed</label>
+        <select>
+          <option>1x (Normal)</option>
+          <option>0.5x</option>
+          <option>1.5x</option>
+          <option>2x (Fast)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 45%;"></div>
+      </div>
+      <div class="progress-labels">
+        <span>0:00</span>
+        <span>0:04.5</span>
+        <span>0:10</span>
+      </div>
+    </div>
+
+    <div class="buttons-row">
+      <button class="btn btn-start">Start Loop</button>
+      <button class="btn btn-stop">Stop</button>
+      <button class="btn btn-reset">Reset</button>
+    </div>
+
+    <div class="status">
+      <div class="status-main">
+        Loop 2 / 5 <span class="progress-percent">(40%)</span>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Neon Night Style Preview:</strong> This mockup features a dark background with electric blue (#00bfff) and purple (#8a2be2) neon accents. Includes subtle animated background, glowing effects, smooth gradients, and a nightclub/neon aesthetic. Balanced between edgy and elegant.
+    </div>
+  </div>
+</body>
+</html>
+
