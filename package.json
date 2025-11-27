@@ -1,6 +1,5 @@
 {
   "name": "youtube-loop-practice",
-  "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -20,3 +19,4 @@
     "vite": "^5.0.8"
   }
 }
+

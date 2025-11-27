@@ -72,6 +72,8 @@ function App() {
   const checkIntervalRef = useRef(null)
   const hasLoopedRef = useRef(false)
   const completionTimeoutRef = useRef(null)
+  const loadingTimeoutRef = useRef(null)
+  const isCheckingTimeRef = useRef(false)
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -155,10 +157,27 @@ function App() {
         setIsPlaying(false)
         setCurrentLoops(0)
         hasLoopedRef.current = false
-        setTimeout(() => setIsLoading(false), 1000)
+        
+        // Clear any existing timeout
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current)
+        }
+        
+        loadingTimeoutRef.current = setTimeout(() => {
+          setIsLoading(false)
+          loadingTimeoutRef.current = null
+        }, 1000)
       } catch (error) {
         setIsLoading(false)
         setValidationError('Error loading video. Please check the URL or Video ID and try again.')
+      }
+    }
+    
+    // Cleanup function
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+        loadingTimeoutRef.current = null
       }
     }
   }, [videoId, player])
@@ -186,57 +205,82 @@ function App() {
   // Check video time and handle looping
   useEffect(() => {
     if (isPlaying && player) {
-      checkIntervalRef.current = setInterval(() => {
-        if (player && player.getCurrentTime) {
-          const time = player.getCurrentTime()
-          setCurrentTime(time)
-          
-          if (time >= endTime) {
-            // Check if we've already looped for this cycle
-            if (!hasLoopedRef.current) {
-              hasLoopedRef.current = true
+      isCheckingTimeRef.current = true
+      
+      // Use recursive setTimeout for adaptive interval frequency
+      const checkTime = () => {
+        // Double-check conditions in case state changed or cleanup ran
+        if (!isCheckingTimeRef.current || !isPlaying || !player || !player.getCurrentTime) {
+          return
+        }
+        
+        const time = player.getCurrentTime()
+        setCurrentTime(time)
+        
+        // Calculate time until end to determine check frequency
+        const timeUntilEnd = endTime - time
+        // Use adaptive interval: check every 500ms if >5s away, 100ms if closer
+        const nextCheckDelay = timeUntilEnd > 5 ? 500 : 100
+        
+        if (time >= endTime) {
+          // Check if we've already looped for this cycle
+          if (!hasLoopedRef.current) {
+            hasLoopedRef.current = true
+            
+            // Increment loop count
+            setCurrentLoops((prev) => {
+              const newCount = prev + 1
               
-              // Increment loop count
-              setCurrentLoops((prev) => {
-                const newCount = prev + 1
-                
-                // Check if we've reached target
-                if (newCount >= targetLoops) {
-                  setIsPlaying(false)
-                  if (player.pauseVideo) {
-                    player.pauseVideo()
-                  }
-                  // Show completion notification
-                  setShowCompletion(true)
-                  if (completionTimeoutRef.current) {
-                    clearTimeout(completionTimeoutRef.current)
-                  }
-                  completionTimeoutRef.current = setTimeout(() => {
-                    setShowCompletion(false)
-                  }, 3000)
-                  return newCount
+              // Check if we've reached target
+              if (newCount >= targetLoops) {
+                setIsPlaying(false)
+                if (player.pauseVideo) {
+                  player.pauseVideo()
                 }
-                
-                // Seek back to start time and maintain playback speed
-                if (player.seekTo) {
-                  player.seekTo(startTime, true)
+                // Show completion notification
+                setShowCompletion(true)
+                if (completionTimeoutRef.current) {
+                  clearTimeout(completionTimeoutRef.current)
                 }
-                if (player.setPlaybackRate) {
-                  player.setPlaybackRate(playbackSpeed)
-                }
-                
+                completionTimeoutRef.current = setTimeout(() => {
+                  setShowCompletion(false)
+                }, 3000)
                 return newCount
-              })
-            }
-          } else if (time < endTime) {
-            // Reset the loop flag when we're back in range
-            hasLoopedRef.current = false
+              }
+              
+              // Seek back to start time and maintain playback speed
+              if (player.seekTo) {
+                player.seekTo(startTime, true)
+              }
+              if (player.setPlaybackRate) {
+                player.setPlaybackRate(playbackSpeed)
+              }
+              
+              return newCount
+            })
+          }
+          // Schedule next check with standard interval after loop
+          // Only schedule if still checking (cleanup sets isCheckingTimeRef to false)
+          if (isCheckingTimeRef.current) {
+            checkIntervalRef.current = setTimeout(checkTime, 100)
+          }
+        } else if (time < endTime) {
+          // Reset the loop flag when we're back in range
+          hasLoopedRef.current = false
+          // Schedule next check with adaptive interval
+          // Only schedule if still checking (cleanup sets isCheckingTimeRef to false)
+          if (isCheckingTimeRef.current) {
+            checkIntervalRef.current = setTimeout(checkTime, nextCheckDelay)
           }
         }
-      }, 100) // Check every 100ms
+      }
+      
+      // Start the checking loop
+      checkTime()
     } else {
+      isCheckingTimeRef.current = false
       if (checkIntervalRef.current) {
-        clearInterval(checkIntervalRef.current)
+        clearTimeout(checkIntervalRef.current)
         checkIntervalRef.current = null
       }
       hasLoopedRef.current = false
@@ -246,8 +290,10 @@ function App() {
     }
 
     return () => {
+      isCheckingTimeRef.current = false
       if (checkIntervalRef.current) {
-        clearInterval(checkIntervalRef.current)
+        clearTimeout(checkIntervalRef.current)
+        checkIntervalRef.current = null
       }
       if (completionTimeoutRef.current) {
         clearTimeout(completionTimeoutRef.current)
