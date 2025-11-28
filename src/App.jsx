@@ -322,11 +322,23 @@ function App() {
   }, [player, validationError, endTime, startTime, playbackSpeed])
 
   const handleStop = useCallback(() => {
-    if (player && player.pauseVideo) {
-      player.pauseVideo()
+    if (!player) return
+    
+    // Toggle behavior: if playing, stop; if stopped, resume
+    if (isPlaying) {
+      // Stop/pause the video
+      if (player.pauseVideo) {
+        player.pauseVideo()
+      }
+      setIsPlaying(false)
+    } else {
+      // Resume playing from current position
+      if (player.playVideo) {
+        player.playVideo()
+      }
+      setIsPlaying(true)
     }
-    setIsPlaying(false)
-  }, [player])
+  }, [player, isPlaying])
 
   const handleReset = useCallback(() => {
     if (player) {
@@ -645,9 +657,9 @@ function App() {
         <button
           className="btn btn-stop"
           onClick={handleStop}
-          disabled={!isPlaying}
+          disabled={!player}
         >
-          Stop
+          {isPlaying ? 'Stop' : 'Resume'}
         </button>
         <button
           className="btn btn-reset"

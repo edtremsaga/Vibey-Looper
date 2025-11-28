@@ -1,5 +1,5 @@
 .app {
-  max-width: 800px;
+  max-width: 100%;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -13,6 +13,13 @@
     4px 4px 0px #fff,
     8px 8px 0px #333;
   position: relative;
+}
+
+@media (min-width: 1200px) {
+  .app {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
 }
 
 /* Distressed border effect */
@@ -131,7 +138,7 @@
 
 @media (max-width: 768px) {
   .search-section {
-    margin-bottom: 28px;
+    display: none;
   }
 }
 
@@ -150,6 +157,7 @@
 
 .search-input {
   flex: 1;
+  box-sizing: border-box;
 }
 
 .search-hint {
@@ -228,14 +236,14 @@
   transition: all 0.2s;
   box-shadow: 2px 2px 0px #666;
   border-radius: 0;
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
   .input-group input,
   .input-group select {
-    padding: 10px 14px;
+    padding: 12px 14px;
     font-size: 16px;
-    min-height: 44px;
   }
 }
 
@@ -782,6 +790,11 @@
   .app {
     gap: 24px;
     padding: 30px 16px;
+    box-sizing: border-box;
+  }
+  
+  .input-group {
+    box-sizing: border-box;
   }
 
   .title {
