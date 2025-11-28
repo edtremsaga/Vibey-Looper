@@ -1,5 +1,5 @@
 .app {
-  max-width: 100%;
+  max-width: 800px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -13,13 +13,7 @@
     4px 4px 0px #fff,
     8px 8px 0px #333;
   position: relative;
-}
-
-@media (min-width: 1200px) {
-  .app {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
+  margin: 0 auto;
 }
 
 /* Distressed border effect */

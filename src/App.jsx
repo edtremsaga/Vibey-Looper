@@ -57,6 +57,7 @@ function App() {
   const [startTimeDisplay, setStartTimeDisplay] = useState('0:00')
   const [endTimeDisplay, setEndTimeDisplay] = useState('0:10')
   const [targetLoops, setTargetLoops] = useState(5)
+  const [targetLoopsDisplay, setTargetLoopsDisplay] = useState('5')
   const [currentLoops, setCurrentLoops] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [player, setPlayer] = useState(null)
@@ -68,6 +69,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [hasBeenStopped, setHasBeenStopped] = useState(false)
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -238,14 +240,6 @@ function App() {
                 if (player.pauseVideo) {
                   player.pauseVideo()
                 }
-                // Show completion notification
-                setShowCompletion(true)
-                if (completionTimeoutRef.current) {
-                  clearTimeout(completionTimeoutRef.current)
-                }
-                completionTimeoutRef.current = setTimeout(() => {
-                  setShowCompletion(false)
-                }, 3000)
                 return newCount
               }
               
@@ -296,9 +290,6 @@ function App() {
         clearTimeout(checkIntervalRef.current)
         checkIntervalRef.current = null
       }
-      if (completionTimeoutRef.current) {
-        clearTimeout(completionTimeoutRef.current)
-      }
     }
   }, [isPlaying, player, startTime, endTime, targetLoops, playbackSpeed])
 
@@ -308,7 +299,7 @@ function App() {
     // Reset loop count
     setCurrentLoops(0)
     hasLoopedRef.current = false
-    setShowCompletion(false)
+    setHasBeenStopped(false)
     
     // Set playback speed before starting
     if (player.setPlaybackRate) {
@@ -331,12 +322,14 @@ function App() {
         player.pauseVideo()
       }
       setIsPlaying(false)
+      setHasBeenStopped(true)
     } else {
       // Resume playing from current position
       if (player.playVideo) {
         player.playVideo()
       }
       setIsPlaying(true)
+      setHasBeenStopped(false)
     }
   }, [player, isPlaying])
 
@@ -599,10 +592,26 @@ function App() {
           <label htmlFor="target-loops">Target Loops</label>
           <input
             id="target-loops"
-            type="number"
-            value={targetLoops}
-            onChange={(e) => setTargetLoops(parseInt(e.target.value) || 1)}
-            min="1"
+            type="text"
+            value={targetLoopsDisplay}
+            onChange={(e) => {
+              const value = e.target.value
+              // Allow empty string or whole numbers only
+              if (value === '' || /^\d+$/.test(value)) {
+                setTargetLoopsDisplay(value)
+                // Update the actual targetLoops value, default to 1 if empty
+                const numValue = value === '' ? 1 : parseInt(value, 10)
+                setTargetLoops(numValue || 1)
+              }
+            }}
+            onBlur={(e) => {
+              // If empty on blur, set to default value
+              if (e.target.value === '') {
+                setTargetLoopsDisplay('5')
+                setTargetLoops(5)
+              }
+            }}
+            placeholder="5"
             disabled={isPlaying}
           />
         </div>
@@ -659,7 +668,7 @@ function App() {
           onClick={handleStop}
           disabled={!player}
         >
-          {isPlaying ? 'Stop' : 'Resume'}
+          {isPlaying ? 'Stop' : (hasBeenStopped ? 'Resume' : 'Stop')}
         </button>
         <button
           className="btn btn-reset"
@@ -684,17 +693,6 @@ function App() {
         )}
       </div>
 
-          {/* Completion notification */}
-          {showCompletion && (
-            <div className="completion-notification">
-              <div className="completion-content">
-                <span className="completion-icon">✓</span>
-                <span className="completion-text">
-                  Completed {targetLoops} loop{targetLoops !== 1 ? 's' : ''}!
-                </span>
-              </div>
-            </div>
-          )}
 
           {/* Help link at bottom */}
           <div className="help-link-bottom">
