@@ -124,13 +124,88 @@
   font-weight: 400;
 }
 
-.input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.search-section {
   width: 100%;
   margin-bottom: 20px;
 }
+
+@media (max-width: 768px) {
+  .search-section {
+    margin-bottom: 28px;
+  }
+}
+
+.search-input-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+@media (max-width: 768px) {
+  .search-input-wrapper {
+    gap: 16px;
+    align-items: stretch;
+  }
+}
+
+.search-input {
+  flex: 1;
+}
+
+.search-hint {
+  font-size: 11px;
+  color: #999;
+  margin-top: 6px;
+  font-style: italic;
+  font-family: 'Roboto Condensed', sans-serif;
+}
+
+@media (max-width: 768px) {
+  .search-hint {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+}
+
+.btn-search {
+  padding: 12px 24px;
+  font-size: 14px;
+  white-space: nowrap;
+  min-width: auto;
+  background: #000;
+  border-color: rgba(200, 50, 50, 0.8);
+  color: rgba(200, 50, 50, 0.9);
+  box-shadow: 4px 4px 0px rgba(200, 50, 50, 0.8);
+}
+
+@media (max-width: 768px) {
+  .btn-search {
+    padding: 16px 28px;
+    font-size: 16px;
+    min-height: 48px;
+    min-width: 120px;
+  }
+}
+
+.btn-search:hover:not(:disabled) {
+  background: rgba(200, 50, 50, 0.1);
+  box-shadow: 2px 2px 0px rgba(200, 50, 50, 0.8);
+}
+
+.btn-search:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 24px;
+  }
 
 .input-group label {
   color: #fff;
@@ -153,6 +228,15 @@
   transition: all 0.2s;
   box-shadow: 2px 2px 0px #666;
   border-radius: 0;
+}
+
+@media (max-width: 768px) {
+  .input-group input,
+  .input-group select {
+    padding: 10px 14px;
+    font-size: 16px;
+    min-height: 44px;
+  }
 }
 
 .input-group input::placeholder {
@@ -703,6 +787,19 @@
   .title {
     font-size: 28px;
     letter-spacing: 2px;
+  }
+
+  .search-input-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .btn-search {
+    width: 100%;
+    padding: 18px 28px;
+    font-size: 16px;
+    min-height: 52px;
   }
 
   .controls-row {

@@ -67,6 +67,7 @@ function App() {
   const [showCompletion, setShowCompletion] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -347,6 +348,21 @@ function App() {
     // Video loading will be handled by the useEffect watching videoId
   }, [])
 
+  const handleYouTubeSearch = useCallback(() => {
+    if (searchQuery.trim()) {
+      const encodedQuery = encodeURIComponent(searchQuery.trim())
+      const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodedQuery}`
+      window.open(youtubeSearchUrl, '_blank')
+    }
+  }, [searchQuery])
+
+  const handleSearchKeyPress = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleYouTubeSearch()
+    }
+  }, [handleYouTubeSearch])
+
   // Memoize progress calculations to avoid recalculating on every render
   const loopProgress = useMemo(() => {
     if (!isPlaying || endTime <= startTime) return 0
@@ -426,7 +442,11 @@ function App() {
             <div className="help-content">
               <ol>
                 <li>
-                  <strong>Enter a YouTube video:</strong> Paste a YouTube URL or enter a Video ID in the input field at the top.
+                  <strong>Find a YouTube video:</strong>
+                  <ul>
+                    <li>Use the search box at the top to search for songs. Click "Search on YouTube" to open results in a new tab.</li>
+                    <li>Or paste a YouTube URL or enter a Video ID directly in the input field below.</li>
+                  </ul>
                 </li>
                 <li>
                   <strong>Set your loop times:</strong>
@@ -472,6 +492,32 @@ function App() {
         </div>
       )}
       
+      <div className="search-section">
+        <div className="input-group">
+          <label htmlFor="search-query">Search for a song</label>
+          <div className="search-input-wrapper">
+            <input
+              id="search-query"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={handleSearchKeyPress}
+              placeholder="Type song name or artist..."
+              className="search-input"
+            />
+            <button
+              type="button"
+              className="btn btn-search"
+              onClick={handleYouTubeSearch}
+              disabled={!searchQuery.trim()}
+            >
+              Search on YouTube
+            </button>
+          </div>
+          <p className="search-hint">Search will open in a new tab. Copy the video URL and paste it below.</p>
+        </div>
+      </div>
+
       <div className="input-group">
         <label htmlFor="video-id">URL or Video ID of song from YouTube</label>
         <input
