@@ -65,7 +65,6 @@ function App() {
   const [showHelp, setShowHelp] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [validationError, setValidationError] = useState('')
-  const [showCompletion, setShowCompletion] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
@@ -74,7 +73,6 @@ function App() {
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
   const hasLoopedRef = useRef(false)
-  const completionTimeoutRef = useRef(null)
   const loadingTimeoutRef = useRef(null)
   const isCheckingTimeRef = useRef(false)
 
@@ -145,7 +143,7 @@ function App() {
     }, 200)
     
     return () => clearTimeout(timer)
-  }, [apiReady])
+  }, [apiReady, playbackSpeed, videoId])
 
   // Load new video when videoId changes (but player already exists)
   useEffect(() => {
@@ -201,6 +199,7 @@ function App() {
         player.setPlaybackRate(playbackSpeed)
       } catch (error) {
         // Silently handle playback rate errors (may fail if video isn't ready)
+        console.warn('Failed to set playback speed:', error)
       }
     }
   }, [playbackSpeed, player])
@@ -217,55 +216,72 @@ function App() {
           return
         }
         
-        const time = player.getCurrentTime()
-        setCurrentTime(time)
-        
-        // Calculate time until end to determine check frequency
-        const timeUntilEnd = endTime - time
-        // Use adaptive interval: check every 500ms if >5s away, 100ms if closer
-        const nextCheckDelay = timeUntilEnd > 5 ? 500 : 100
-        
-        if (time >= endTime) {
-          // Check if we've already looped for this cycle
-          if (!hasLoopedRef.current) {
-            hasLoopedRef.current = true
-            
-            // Increment loop count
-            setCurrentLoops((prev) => {
-              const newCount = prev + 1
+        try {
+          const time = player.getCurrentTime()
+          setCurrentTime(time)
+          
+          // Calculate time until end to determine check frequency
+          const timeUntilEnd = endTime - time
+          // Use adaptive interval: check every 500ms if >5s away, 100ms if closer
+          const nextCheckDelay = timeUntilEnd > 5 ? 500 : 100
+          
+          if (time >= endTime) {
+            // Check if we've already looped for this cycle
+            if (!hasLoopedRef.current) {
+              hasLoopedRef.current = true
               
-              // Check if we've reached target
-              if (newCount >= targetLoops) {
-                setIsPlaying(false)
-                if (player.pauseVideo) {
-                  player.pauseVideo()
+              // Increment loop count
+              setCurrentLoops((prev) => {
+                const newCount = prev + 1
+                
+                // Check if we've reached target
+                if (newCount >= targetLoops) {
+                  setIsPlaying(false)
+                  if (player.pauseVideo) {
+                    try {
+                      player.pauseVideo()
+                    } catch (error) {
+                      console.warn('Failed to pause video at loop completion:', error)
+                    }
+                  }
+                  return newCount
                 }
+                
+                // Seek back to start time and maintain playback speed
+                try {
+                  if (player.seekTo) {
+                    player.seekTo(startTime, true)
+                  }
+                  if (player.setPlaybackRate) {
+                    player.setPlaybackRate(playbackSpeed)
+                  }
+                } catch (error) {
+                  console.warn('Failed to seek or set playback speed during loop:', error)
+                  // Continue anyway - the loop will try again next check
+                }
+                
                 return newCount
-              }
-              
-              // Seek back to start time and maintain playback speed
-              if (player.seekTo) {
-                player.seekTo(startTime, true)
-              }
-              if (player.setPlaybackRate) {
-                player.setPlaybackRate(playbackSpeed)
-              }
-              
-              return newCount
-            })
+              })
+            }
+            // Schedule next check with standard interval after loop
+            // Only schedule if still checking (cleanup sets isCheckingTimeRef to false)
+            if (isCheckingTimeRef.current) {
+              checkIntervalRef.current = setTimeout(checkTime, 100)
+            }
+          } else if (time < endTime) {
+            // Reset the loop flag when we're back in range
+            hasLoopedRef.current = false
+            // Schedule next check with adaptive interval
+            // Only schedule if still checking (cleanup sets isCheckingTimeRef to false)
+            if (isCheckingTimeRef.current) {
+              checkIntervalRef.current = setTimeout(checkTime, nextCheckDelay)
+            }
           }
-          // Schedule next check with standard interval after loop
-          // Only schedule if still checking (cleanup sets isCheckingTimeRef to false)
+        } catch (error) {
+          console.error('Error checking video time:', error)
+          // Continue checking - don't break the loop on transient errors
           if (isCheckingTimeRef.current) {
             checkIntervalRef.current = setTimeout(checkTime, 100)
-          }
-        } else if (time < endTime) {
-          // Reset the loop flag when we're back in range
-          hasLoopedRef.current = false
-          // Schedule next check with adaptive interval
-          // Only schedule if still checking (cleanup sets isCheckingTimeRef to false)
-          if (isCheckingTimeRef.current) {
-            checkIntervalRef.current = setTimeout(checkTime, nextCheckDelay)
           }
         }
       }
@@ -296,55 +312,99 @@ function App() {
   const handleStart = useCallback(() => {
     if (!player || validationError || endTime <= startTime) return
     
-    // Reset loop count
-    setCurrentLoops(0)
-    hasLoopedRef.current = false
-    setHasBeenStopped(false)
-    
-    // Set playback speed before starting
-    if (player.setPlaybackRate) {
-      player.setPlaybackRate(playbackSpeed)
+    try {
+      // Reset loop count
+      setCurrentLoops(0)
+      hasLoopedRef.current = false
+      setHasBeenStopped(false)
+      
+      // Set playback speed before starting
+      if (player.setPlaybackRate) {
+        try {
+          player.setPlaybackRate(playbackSpeed)
+        } catch (error) {
+          console.warn('Failed to set playback speed:', error)
+        }
+      }
+      
+      // Seek to start time and play
+      if (player.seekTo) {
+        player.seekTo(startTime, true)
+      }
+      if (player.playVideo) {
+        player.playVideo()
+      }
+      setIsPlaying(true)
+    } catch (error) {
+      console.error('Error starting video:', error)
+      setValidationError('Failed to start video. Please try again.')
+      setIsPlaying(false)
     }
-    
-    // Seek to start time and play
-    player.seekTo(startTime, true)
-    player.playVideo()
-    setIsPlaying(true)
   }, [player, validationError, endTime, startTime, playbackSpeed])
 
   const handleStop = useCallback(() => {
     if (!player) return
     
-    // Toggle behavior: if playing, stop; if stopped, resume
-    if (isPlaying) {
-      // Stop/pause the video
-      if (player.pauseVideo) {
-        player.pauseVideo()
+    try {
+      // Toggle behavior: if playing, stop; if stopped, resume
+      if (isPlaying) {
+        // Stop/pause the video
+        if (player.pauseVideo) {
+          try {
+            player.pauseVideo()
+          } catch (error) {
+            console.warn('Failed to pause video:', error)
+          }
+        }
+        setIsPlaying(false)
+        setHasBeenStopped(true)
+      } else {
+        // Resume playing from current position
+        if (player.playVideo) {
+          try {
+            player.playVideo()
+          } catch (error) {
+            console.warn('Failed to resume video:', error)
+            setValidationError('Failed to resume video. Please try again.')
+            return
+          }
+        }
+        setIsPlaying(true)
+        setHasBeenStopped(false)
       }
-      setIsPlaying(false)
-      setHasBeenStopped(true)
-    } else {
-      // Resume playing from current position
-      if (player.playVideo) {
-        player.playVideo()
-      }
-      setIsPlaying(true)
-      setHasBeenStopped(false)
+    } catch (error) {
+      console.error('Error in handleStop:', error)
+      setValidationError('An error occurred. Please try again.')
     }
   }, [player, isPlaying])
 
   const handleReset = useCallback(() => {
-    if (player) {
-      if (player.pauseVideo) {
-        player.pauseVideo()
+    try {
+      if (player) {
+        if (player.pauseVideo) {
+          try {
+            player.pauseVideo()
+          } catch (error) {
+            console.warn('Failed to pause video on reset:', error)
+          }
+        }
+        if (player.seekTo) {
+          try {
+            player.seekTo(startTime, true)
+          } catch (error) {
+            console.warn('Failed to seek video on reset:', error)
+            setValidationError('Failed to reset video position. Please try again.')
+            return
+          }
+        }
       }
-      if (player.seekTo) {
-        player.seekTo(startTime, true)
-      }
+      setIsPlaying(false)
+      setCurrentLoops(0)
+      hasLoopedRef.current = false
+    } catch (error) {
+      console.error('Error in handleReset:', error)
+      setValidationError('An error occurred while resetting. Please try again.')
     }
-    setIsPlaying(false)
-    setCurrentLoops(0)
-    hasLoopedRef.current = false
   }, [player, startTime])
 
   const handleVideoIdChange = useCallback((newVideoId) => {
