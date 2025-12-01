@@ -493,7 +493,7 @@ function App() {
           <span className="title-byline">by Vibey Craft</span>
         </div>
       </div>
-      <p className="subtitle">Loop sections of songs</p>
+      <p className="subtitle">Loop sections of songs to perfect your practice</p>
       
       {showHelp && (
         <div className="help-modal-overlay" onClick={() => setShowHelp(false)}>

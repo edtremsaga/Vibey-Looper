@@ -6,12 +6,12 @@
   align-items: center;
   gap: 28px;
   padding: 40px 20px;
-  background: #1a1a1a;
-  border: 3px solid #fff;
+  background: #000;
+  border: 4px solid #fff;
   box-shadow: 
-    0 0 0 1px #000,
-    4px 4px 0px #fff,
-    8px 8px 0px #333;
+    0 0 0 4px #000,
+    8px 8px 0 #ff0000,
+    16px 16px 0 #000;
   position: relative;
   margin: 0 auto;
 }
@@ -20,11 +20,11 @@
 .app::before {
   content: '';
   position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
-  border: 2px solid rgba(200, 50, 50, 0.4);
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid #ff0000;
   clip-path: polygon(
     0% 0%, 98% 0%, 100% 2%, 2% 2%, 0% 4%,
     0% 98%, 2% 100%, 98% 100%, 100% 98%, 100% 2%
@@ -40,21 +40,24 @@
   width: 100%;
   margin-bottom: 8px;
   flex-wrap: wrap;
+  padding-bottom: 30px;
+  border-bottom: 3px solid #ff0000;
 }
 
 .title {
   font-family: 'Oswald', sans-serif;
-  font-size: 42px;
+  font-size: 54px;
   font-weight: 700;
   color: #fff;
   text-transform: uppercase;
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   margin: 0;
   text-shadow: 
-    2px 2px 0px rgba(200, 50, 50, 0.6),
-    4px 4px 0px #000;
+    4px 4px 0 #ff0000,
+    8px 8px 0 #000;
   transform: rotate(-1deg);
   position: relative;
+  line-height: 0.9;
 }
 
 .title::after {
@@ -65,11 +68,11 @@
   right: 0;
   bottom: 0;
   background: repeating-linear-gradient(
-    0deg,
+    45deg,
     transparent,
-    transparent 2px,
-    rgba(200, 50, 50, 0.05) 2px,
-    rgba(200, 50, 50, 0.05) 4px
+    transparent 10px,
+    rgba(255, 0, 0, 0.1) 10px,
+    rgba(255, 0, 0, 0.1) 20px
   );
   pointer-events: none;
 }
@@ -103,7 +106,7 @@
   letter-spacing: 2px;
   font-family: 'Oswald', sans-serif;
   text-decoration: underline;
-  text-decoration-color: rgba(200, 50, 50, 0.6);
+  text-decoration-color: #ff0000;
   text-underline-offset: 4px;
   transition: all 0.2s;
   padding: 8px 12px;
@@ -111,7 +114,7 @@
 
 .help-link-text:hover {
   color: #fff;
-  text-decoration-color: rgba(200, 50, 50, 0.9);
+  text-decoration-color: #ff0000;
 }
 
 .subtitle {
@@ -123,11 +126,12 @@
   text-transform: uppercase;
   letter-spacing: 2px;
   font-weight: 400;
+  font-style: italic;
 }
 
 .search-section {
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 17px;
 }
 
 @media (max-width: 768px) {
@@ -177,9 +181,15 @@
   white-space: nowrap;
   min-width: auto;
   background: #000;
-  border-color: rgba(200, 50, 50, 0.8);
-  color: rgba(200, 50, 50, 0.9);
-  box-shadow: 4px 4px 0px rgba(200, 50, 50, 0.8);
+  border: 3px solid #ff0000;
+  color: #ff0000;
+  box-shadow: 4px 4px 0px #ff0000;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 @media (max-width: 768px) {
@@ -192,8 +202,9 @@
 }
 
 .btn-search:hover:not(:disabled) {
-  background: rgba(200, 50, 50, 0.1);
-  box-shadow: 2px 2px 0px rgba(200, 50, 50, 0.8);
+  background: rgba(255, 0, 0, 0.1);
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #ff0000;
 }
 
 .btn-search:disabled {
@@ -223,12 +234,12 @@
   width: 100%;
   padding: 12px 14px;
   background: #000;
-  border: 2px solid #fff;
+  border: 3px solid #fff;
   color: #fff;
   font-size: 16px;
   font-family: 'Roboto Condensed', sans-serif;
   transition: all 0.2s;
-  box-shadow: 2px 2px 0px #666;
+  box-shadow: 4px 4px 0px #666;
   border-radius: 0;
   box-sizing: border-box;
 }
@@ -249,9 +260,9 @@
 .input-group input:focus,
 .input-group select:focus {
   outline: none;
-  border-color: rgba(200, 50, 50, 0.8);
-  box-shadow: 2px 2px 0px rgba(200, 50, 50, 0.8);
-  transform: translate(-1px, -1px);
+  border-color: #ff0000;
+  box-shadow: 4px 4px 0px #ff0000;
+  transform: translate(-2px, -2px);
 }
 
 .input-group input:disabled,
@@ -261,12 +272,12 @@
 }
 
 .input-group input.error {
-  border-color: rgba(200, 50, 50, 0.8);
-  box-shadow: 2px 2px 0px rgba(200, 50, 50, 0.8);
+  border-color: #ff0000;
+  box-shadow: 4px 4px 0px #ff0000;
 }
 
 .error-message {
-  color: rgba(200, 50, 50, 0.9);
+  color: #ff0000;
   font-size: 11px;
   margin-top: 4px;
   font-weight: 700;
@@ -276,7 +287,7 @@
 }
 
 .loading-indicator {
-  color: rgba(200, 50, 50, 0.8);
+  color: #ff0000;
   font-size: 11px;
   margin-top: 4px;
   font-weight: 700;
@@ -289,11 +300,11 @@
   width: 100%;
   max-width: 640px;
   background: #000;
-  border: 3px solid #fff;
+  border: 4px solid #fff;
   overflow: hidden;
   aspect-ratio: 16 / 9;
   margin: 0 auto 30px;
-  box-shadow: 4px 4px 0px #666;
+  box-shadow: 6px 6px 0px #ff0000;
   position: relative;
   border-radius: 0;
 }
@@ -305,7 +316,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  border: 2px solid rgba(200, 50, 50, 0.4);
+  border: 2px solid #ff0000;
   clip-path: polygon(
     0% 0%, 95% 0%, 100% 5%, 5% 5%, 0% 10%,
     0% 90%, 5% 95%, 95% 95%, 100% 90%, 100% 5%
@@ -371,25 +382,25 @@
   width: 100%;
   padding: 12px 14px;
   background: #000;
-  border: 2px solid #fff;
+  border: 3px solid #fff;
   color: #fff;
   font-size: 16px;
   font-family: 'Roboto Condensed', sans-serif;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 2px 2px 0px #666;
+  box-shadow: 4px 4px 0px #666;
   border-radius: 0;
 }
 
 .speed-select:focus {
   outline: none;
-  border-color: rgba(200, 50, 50, 0.8);
-  box-shadow: 2px 2px 0px rgba(200, 50, 50, 0.8);
-  transform: translate(-1px, -1px);
+  border-color: #ff0000;
+  box-shadow: 4px 4px 0px #ff0000;
+  transform: translate(-2px, -2px);
 }
 
 .speed-select:hover {
-  border-color: rgba(200, 50, 50, 0.6);
+  border-color: #ff0000;
 }
 
 .speed-select option {
@@ -408,7 +419,7 @@
 }
 
 .btn {
-  padding: 14px 32px;
+  padding: 16px 32px;
   font-size: 16px;
   font-weight: 700;
   border: 3px solid #fff;
@@ -416,9 +427,9 @@
   color: #fff;
   cursor: pointer;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   transition: all 0.2s;
-  box-shadow: 4px 4px 0px #666;
+  box-shadow: 6px 6px 0px #666;
   font-family: 'Oswald', sans-serif;
   position: relative;
   border-radius: 0;
@@ -426,12 +437,12 @@
 }
 
 .btn:hover:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px #666;
+  transform: translate(3px, 3px);
+  box-shadow: 3px 3px 0px #666;
 }
 
 .btn:active:not(:disabled) {
-  transform: translate(4px, 4px);
+  transform: translate(6px, 6px);
   box-shadow: 0px 0px 0px #666;
 }
 
@@ -443,57 +454,58 @@
 
 .btn-start {
   background: #000;
-  border-color: #fff;
-  box-shadow: 4px 4px 0px #666;
+  border-color: #00ff00;
+  color: #00ff00;
+  box-shadow: 6px 6px 0px #00ff00;
 }
 
 .btn-start:hover:not(:disabled) {
-  background: #333;
-  box-shadow: 2px 2px 0px #666;
+  background: rgba(0, 255, 0, 0.1);
+  box-shadow: 3px 3px 0px #00ff00;
 }
 
 .btn-stop {
   background: #000;
-  border-color: #ff5555;
-  color: #ff5555;
-  box-shadow: 4px 4px 0px #ff5555;
+  border-color: #ff0000;
+  color: #ff0000;
+  box-shadow: 6px 6px 0px #ff0000;
 }
 
 .btn-stop:hover:not(:disabled) {
-  background: #1a0000;
-  box-shadow: 2px 2px 0px #ff5555;
+  background: rgba(255, 0, 0, 0.1);
+  box-shadow: 3px 3px 0px #ff0000;
 }
 
 .btn-reset {
   background: #000;
   border-color: #fff;
-  box-shadow: 4px 4px 0px #666;
+  box-shadow: 6px 6px 0px #666;
 }
 
 .btn-reset:hover:not(:disabled) {
   background: #333;
-  box-shadow: 2px 2px 0px #666;
+  box-shadow: 3px 3px 0px #666;
 }
 
 .status {
   text-align: center;
-  padding: 20px;
+  padding: 30px;
   background: #000;
-  border: 3px solid #fff;
-  box-shadow: 4px 4px 0px #666;
+  border: 4px solid #fff;
+  box-shadow: 6px 6px 0px #ff0000;
   width: 100%;
   max-width: 400px;
   border-radius: 0;
 }
 
 .status-main {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
   color: #fff;
   text-transform: uppercase;
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   font-family: 'Oswald', sans-serif;
-  text-shadow: 2px 2px 0px rgba(200, 50, 50, 0.6);
+  text-shadow: 2px 2px 0 #ff0000;
 }
 
 .progress-percent {
@@ -519,19 +531,19 @@
 
 .progress-bar {
   width: 100%;
-  height: 20px;
+  height: 25px;
   background: #000;
   border: 3px solid #fff;
   overflow: hidden;
-  box-shadow: 2px 2px 0px #666;
+  box-shadow: 4px 4px 0px #666;
   position: relative;
   border-radius: 0;
 }
 
 .progress-fill {
   height: 100%;
-  background: #fff;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+  background: #ff0000;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
   position: relative;
   transition: width 0.1s linear;
 }
@@ -546,9 +558,9 @@
   background: repeating-linear-gradient(
     90deg,
     transparent,
-    transparent 10px,
-    rgba(255, 255, 255, 0.1) 10px,
-    rgba(255, 255, 255, 0.1) 20px
+    transparent 15px,
+    rgba(255, 255, 255, 0.2) 15px,
+    rgba(255, 255, 255, 0.2) 30px
   );
 }
 
@@ -594,8 +606,8 @@
 
 .completion-content {
   background: #000;
-  border: 3px solid #fff;
-  box-shadow: 4px 4px 0px #666;
+  border: 4px solid #fff;
+  box-shadow: 6px 6px 0px #ff0000;
   padding: 24px 40px;
   display: flex;
   align-items: center;
@@ -644,9 +656,9 @@
 }
 
 .help-modal {
-  background: #1a1a1a;
-  border: 3px solid #fff;
-  box-shadow: 4px 4px 0px #666;
+  background: #000;
+  border: 4px solid #fff;
+  box-shadow: 6px 6px 0px #ff0000;
   max-width: 600px;
   width: 100%;
   max-height: 80vh;
@@ -686,8 +698,8 @@
 
 .help-close {
   background: #000;
-  border: 3px solid rgba(200, 50, 50, 0.8);
-  color: rgba(200, 50, 50, 0.8);
+  border: 3px solid #ff0000;
+  color: #ff0000;
   font-size: 28px;
   cursor: pointer;
   padding: 0;
@@ -698,16 +710,16 @@
   justify-content: center;
   line-height: 1;
   transition: all 0.2s;
-  box-shadow: 3px 3px 0px rgba(200, 50, 50, 0.8);
+  box-shadow: 3px 3px 0px #ff0000;
   border-radius: 0;
   font-family: 'Oswald', sans-serif;
   font-weight: bold;
 }
 
 .help-close:hover {
-  background: rgba(200, 50, 50, 0.1);
+  background: rgba(255, 0, 0, 0.1);
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px rgba(200, 50, 50, 0.8);
+  box-shadow: 1px 1px 0px #ff0000;
 }
 
 .help-content {
@@ -745,8 +757,8 @@
   margin-top: 24px;
   padding: 16px;
   background: #000;
-  border: 2px solid rgba(200, 50, 50, 0.6);
-  border-left: 4px solid rgba(200, 50, 50, 0.8);
+  border: 2px solid #ff0000;
+  border-left: 4px solid #ff0000;
   box-shadow: 2px 2px 0px #666;
   border-radius: 0;
 }
@@ -792,8 +804,8 @@
   }
 
   .title {
-    font-size: 28px;
-    letter-spacing: 2px;
+    font-size: 36px;
+    letter-spacing: 3px;
   }
 
   .search-input-wrapper {
@@ -848,11 +860,10 @@
   }
 
   .status {
-    font-size: 22px;
-    padding: 16px 20px;
+    padding: 20px;
   }
 
   .status-main {
-    font-size: 24px;
+    font-size: 28px;
   }
 }
