@@ -528,7 +528,7 @@ function App() {
                     {!isMobile && (
                       <li>Use the search box at the top to search for songs. Click "Search on YouTube" to open results in a new tab.</li>
                     )}
-                    <li>Or paste a YouTube URL or enter a Video ID directly in the input field below.</li>
+                    <li>{!isMobile ? 'Or ' : ''}Paste a YouTube URL or enter a Video ID directly in the input field below.</li>
                   </ul>
                 </li>
                 <li>
