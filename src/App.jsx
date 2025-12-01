@@ -69,12 +69,28 @@ function App() {
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [hasBeenStopped, setHasBeenStopped] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
   const hasLoopedRef = useRef(false)
   const loadingTimeoutRef = useRef(null)
   const isCheckingTimeRef = useRef(false)
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    // Check on mount
+    checkMobile()
+    
+    // Check on resize
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -509,7 +525,9 @@ function App() {
                 <li>
                   <strong>Find a YouTube video:</strong>
                   <ul>
-                    <li>Use the search box at the top to search for songs. Click "Search on YouTube" to open results in a new tab.</li>
+                    {!isMobile && (
+                      <li>Use the search box at the top to search for songs. Click "Search on YouTube" to open results in a new tab.</li>
+                    )}
                     <li>Or paste a YouTube URL or enter a Video ID directly in the input field below.</li>
                   </ul>
                 </li>
@@ -524,7 +542,7 @@ function App() {
                   <strong>Set target loops:</strong> Enter how many times you want the video to loop between the start and end times.
                 </li>
                 <li>
-                  <strong>Start looping:</strong> Click the green "Start Loop" button. The video will automatically:
+                  <strong>Start looping:</strong> {isMobile ? 'Tap' : 'Click'} the green "Start Loop" button. The video will automatically:
                   <ul>
                     <li>Play from the start time</li>
                     <li>Seek back to the start when it reaches the end time</li>
@@ -535,8 +553,8 @@ function App() {
                 <li>
                   <strong>Control playback:</strong>
                   <ul>
-                    <li>Click "Stop" (red button) to pause the loop</li>
-                    <li>Click "Reset" (blue button) to return to the start time and reset the loop counter</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} "Stop" (red button) to pause the loop</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} "Reset" (blue button) to return to the start time and reset the loop counter</li>
                     <li>Use the "Playback Speed" dropdown to adjust video speed (0.25x to 2x)</li>
                   </ul>
                 </li>
@@ -544,14 +562,16 @@ function App() {
               <p className="help-tip">
                 <strong>Tip:</strong> You can also enter plain numbers (like "46") which will be treated as seconds.
               </p>
-              <div className="help-keyboard">
-                <h3>Keyboard Shortcuts</h3>
-                <ul>
-                  <li><strong>Spacebar:</strong> Start/Stop looping</li>
-                  <li><strong>R:</strong> Reset to start time</li>
-                  <li><strong>Esc:</strong> Close help modal</li>
-                </ul>
-              </div>
+              {!isMobile && (
+                <div className="help-keyboard">
+                  <h3>Keyboard Shortcuts</h3>
+                  <ul>
+                    <li><strong>Spacebar:</strong> Start/Stop looping</li>
+                    <li><strong>R:</strong> Reset to start time</li>
+                    <li><strong>Esc:</strong> Close help modal</li>
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help - Desktop Version</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto+Condensed:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background: #000;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .help-modal {
+            background: #000;
+            border: 4px solid #fff;
+            box-shadow: 6px 6px 0px #ff0000;
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+            border-radius: 0;
+        }
+        
+        .help-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 28px;
+            border-bottom: 3px solid #fff;
+        }
+        
+        .help-modal-header h2 {
+            margin: 0;
+            color: #fff;
+            font-size: 26px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Oswald', sans-serif;
+        }
+        
+        .help-content {
+            padding: 28px;
+            color: #fff;
+            line-height: 1.8;
+            font-family: 'Roboto Condensed', sans-serif;
+        }
+        
+        .help-content ol {
+            margin: 0;
+            padding-left: 24px;
+        }
+        
+        .help-content li {
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+        
+        .help-content ul {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding-left: 24px;
+        }
+        
+        .help-content strong {
+            color: #fff;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 1px;
+        }
+        
+        .help-tip {
+            margin-top: 24px;
+            padding: 16px;
+            background: #000;
+            border: 2px solid #ff0000;
+            border-left: 4px solid #ff0000;
+            box-shadow: 2px 2px 0px #666;
+            border-radius: 0;
+        }
+        
+        .help-keyboard {
+            margin-top: 24px;
+            padding: 16px;
+            background: #000;
+            border: 2px solid #fff;
+            border-left: 4px solid #fff;
+            box-shadow: 2px 2px 0px #666;
+            border-radius: 0;
+        }
+        
+        .help-keyboard h3 {
+            margin: 0 0 12px 0;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Oswald', sans-serif;
+        }
+        
+        .help-keyboard ul {
+            margin: 0;
+            padding-left: 24px;
+        }
+        
+        .help-keyboard li {
+            margin-bottom: 8px;
+        }
+        
+        .desktop-only {
+            background: rgba(0, 255, 0, 0.1);
+            border-left: 3px solid #00ff00;
+            padding: 8px 12px;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="help-modal">
+        <div class="help-modal-header">
+            <h2>How to Use</h2>
+            <button style="background: #000; border: 3px solid #ff0000; color: #ff0000; font-size: 28px; cursor: pointer; padding: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; line-height: 1;">×</button>
+        </div>
+        <div class="help-content">
+            <ol>
+                <li>
+                    <strong>Find a YouTube video:</strong>
+                    <ul>
+                        <li class="desktop-only">Use the search box at the top to search for songs. Click "Search on YouTube" to open results in a new tab.</li>
+                        <li>Or paste a YouTube URL or enter a Video ID directly in the input field below.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Set your loop times:</strong>
+                    <ul>
+                        <li><strong>Start Time:</strong> Enter the start time in MM:SS format (e.g., "0:46" for 46 seconds, "1:02" for 1 minute 2 seconds)</li>
+                        <li><strong>End Time:</strong> Enter the end time in MM:SS format (e.g., "1:30" for 1 minute 30 seconds)</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Set target loops:</strong> Enter how many times you want the video to loop between the start and end times.
+                </li>
+                <li>
+                    <strong>Start looping:</strong> Click the green "Start Loop" button. The video will automatically:
+                    <ul>
+                        <li>Play from the start time</li>
+                        <li>Seek back to the start when it reaches the end time</li>
+                        <li>Count each completed loop</li>
+                        <li>Stop automatically when the target number of loops is reached</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Control playback:</strong>
+                    <ul>
+                        <li>Click "Stop" (red button) to pause the loop</li>
+                        <li>Click "Reset" (blue button) to return to the start time and reset the loop counter</li>
+                        <li>Use the "Playback Speed" dropdown to adjust video speed (0.25x to 2x)</li>
+                    </ul>
+                </li>
+            </ol>
+            <p class="help-tip">
+                <strong>Tip:</strong> You can also enter plain numbers (like "46") which will be treated as seconds.
+            </p>
+            <div class="help-keyboard">
+                <h3>Keyboard Shortcuts</h3>
+                <ul>
+                    <li><strong>Spacebar:</strong> Start/Stop looping</li>
+                    <li><strong>R:</strong> Reset to start time</li>
+                    <li><strong>Esc:</strong> Close help modal</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help - Mobile Version</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto+Condensed:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background: #000;
+            color: #fff;
+            padding: 10px;
+        }
+        
+        .help-modal {
+            background: #000;
+            border: 4px solid #fff;
+            box-shadow: 6px 6px 0px #ff0000;
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+            border-radius: 0;
+        }
+        
+        .help-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 3px solid #fff;
+        }
+        
+        .help-modal-header h2 {
+            margin: 0;
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Oswald', sans-serif;
+        }
+        
+        .help-content {
+            padding: 24px;
+            color: #fff;
+            line-height: 1.8;
+            font-family: 'Roboto Condensed', sans-serif;
+            font-size: 14px;
+        }
+        
+        .help-content ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .help-content li {
+            margin-bottom: 16px;
+            line-height: 1.7;
+        }
+        
+        .help-content ul {
+            margin-top: 8px;
+            margin-bottom: 8px;
+            padding-left: 20px;
+        }
+        
+        .help-content strong {
+            color: #fff;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 1px;
+            font-size: 13px;
+        }
+        
+        .help-tip {
+            margin-top: 20px;
+            padding: 12px;
+            background: #000;
+            border: 2px solid #ff0000;
+            border-left: 4px solid #ff0000;
+            box-shadow: 2px 2px 0px #666;
+            border-radius: 0;
+            font-size: 13px;
+        }
+        
+        .mobile-note {
+            background: rgba(255, 0, 0, 0.1);
+            border-left: 3px solid #ff0000;
+            padding: 8px 12px;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="help-modal">
+        <div class="help-modal-header">
+            <h2>How to Use</h2>
+            <button style="background: #000; border: 3px solid #ff0000; color: #ff0000; font-size: 24px; cursor: pointer; padding: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; line-height: 1;">×</button>
+        </div>
+        <div class="help-content">
+            <ol>
+                <li>
+                    <strong>Find a YouTube video:</strong>
+                    <ul>
+                        <li>Paste a YouTube URL or enter a Video ID directly in the input field.</li>
+                    </ul>
+                    <div class="mobile-note">Note: Search box is not available on mobile devices.</div>
+                </li>
+                <li>
+                    <strong>Set your loop times:</strong>
+                    <ul>
+                        <li><strong>Start Time:</strong> Enter the start time in MM:SS format (e.g., "0:46" for 46 seconds, "1:02" for 1 minute 2 seconds)</li>
+                        <li><strong>End Time:</strong> Enter the end time in MM:SS format (e.g., "1:30" for 1 minute 30 seconds)</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Set target loops:</strong> Enter how many times you want the video to loop between the start and end times.
+                </li>
+                <li>
+                    <strong>Start looping:</strong> Tap the green "Start Loop" button. The video will automatically:
+                    <ul>
+                        <li>Play from the start time</li>
+                        <li>Seek back to the start when it reaches the end time</li>
+                        <li>Count each completed loop</li>
+                        <li>Stop automatically when the target number of loops is reached</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Control playback:</strong>
+                    <ul>
+                        <li>Tap "Stop" (red button) to pause the loop</li>
+                        <li>Tap "Reset" (blue button) to return to the start time and reset the loop counter</li>
+                        <li>Use the "Playback Speed" dropdown to adjust video speed (0.25x to 2x)</li>
+                    </ul>
+                </li>
+            </ol>
+            <p class="help-tip">
+                <strong>Tip:</strong> You can also enter plain numbers (like "46") which will be treated as seconds.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
