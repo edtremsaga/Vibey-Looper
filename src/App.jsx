@@ -774,11 +774,18 @@ function App() {
       </div>
 
 
-          {/* Help link at bottom */}
+          {/* Help and Feedback links at bottom */}
           <div className="help-link-bottom">
             <button className="help-link-text" onClick={() => setShowHelp(true)}>
               help
             </button>
+            <span style={{ color: '#666', margin: '0 8px' }}>|</span>
+            <a 
+              href="mailto:vibeycraft@gmail.com?subject=Vibey Music Looper Feedback" 
+              className="help-link-text"
+            >
+              feedback
+            </a>
           </div>
         </div>
       )
