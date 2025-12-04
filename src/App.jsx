@@ -572,6 +572,17 @@ function App() {
                   </ul>
                 </div>
               )}
+              <div className="help-disclaimer">
+                <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#999', lineHeight: '1.6', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  This site uses the YouTube IFrame Player API and streams videos directly from YouTube.<br />
+                  <br />
+                  No video or audio content is downloaded, stored, or redistributed by this site.<br />
+                  <br />
+                  All content remains subject to YouTube's Terms of Service and copyright policies.<br />
+                  <br />
+                  Users are responsible for using the service in compliance with YouTube's terms.
+                </p>
+              </div>
             </div>
           </div>
         </div>
