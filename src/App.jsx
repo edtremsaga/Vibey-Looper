@@ -555,7 +555,7 @@ function App() {
                   <ul>
                     <li>{isMobile ? 'Tap' : 'Click'} "Stop" (red button) to pause the loop</li>
                     <li>{isMobile ? 'Tap' : 'Click'} "Reset" (blue button) to return to the start time and reset the loop counter</li>
-                    <li>Use the "Playback Speed" dropdown to adjust video speed (0.25x to 2x)</li>
+                    <li>Use the "Playback Speed" buttons to adjust video speed (0.5x to 2x)</li>
                   </ul>
                 </li>
               </ol>
@@ -697,24 +697,51 @@ function App() {
         </div>
       </div>
 
-      <div className="speed-control-row">
-        <div className="input-group">
-          <label htmlFor="playback-speed">Playback Speed</label>
-          <select
-            id="playback-speed"
-            value={playbackSpeed}
-            onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
-            className="speed-select"
+      <div className="speed-presets-section">
+        <div className="speed-presets-label">Playback Speed</div>
+        <div className="speed-presets-buttons">
+          <button
+            className={`speed-preset-btn ${playbackSpeed === 0.5 ? 'active' : ''}`}
+            onClick={() => setPlaybackSpeed(0.5)}
+            disabled={isPlaying}
           >
-            <option value={0.25}>0.25x (Slow)</option>
-            <option value={0.5}>0.5x</option>
-            <option value={0.75}>0.75x</option>
-            <option value={1}>1x (Normal)</option>
-            <option value={1.25}>1.25x</option>
-            <option value={1.5}>1.5x</option>
-            <option value={1.75}>1.75x</option>
-            <option value={2}>2x (Fast)</option>
-          </select>
+            0.5x
+          </button>
+          <button
+            className={`speed-preset-btn ${playbackSpeed === 0.75 ? 'active' : ''}`}
+            onClick={() => setPlaybackSpeed(0.75)}
+            disabled={isPlaying}
+          >
+            0.75x
+          </button>
+          <button
+            className={`speed-preset-btn ${playbackSpeed === 1 ? 'active' : ''}`}
+            onClick={() => setPlaybackSpeed(1)}
+            disabled={isPlaying}
+          >
+            1x
+          </button>
+          <button
+            className={`speed-preset-btn ${playbackSpeed === 1.25 ? 'active' : ''}`}
+            onClick={() => setPlaybackSpeed(1.25)}
+            disabled={isPlaying}
+          >
+            1.25x
+          </button>
+          <button
+            className={`speed-preset-btn ${playbackSpeed === 1.5 ? 'active' : ''}`}
+            onClick={() => setPlaybackSpeed(1.5)}
+            disabled={isPlaying}
+          >
+            1.5x
+          </button>
+          <button
+            className={`speed-preset-btn ${playbackSpeed === 2 ? 'active' : ''}`}
+            onClick={() => setPlaybackSpeed(2)}
+            disabled={isPlaying}
+          >
+            2x
+          </button>
         </div>
       </div>
 
