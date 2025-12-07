@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volume Control Mockup - Vibey Looper</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background: #000;
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .mockup-container {
+            max-width: 800px;
+            width: 100%;
+            background: #000;
+            border: 4px solid #fff;
+            box-shadow: 
+                0 0 0 4px #000,
+                8px 8px 0 #ff0000,
+                16px 16px 0 #000;
+            padding: 40px 20px;
+        }
+
+        .title-section {
+            text-align: center;
+            padding-bottom: 30px;
+            border-bottom: 3px solid #ff0000;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 54px;
+            font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 
+                4px 4px 0 #ff0000,
+                8px 8px 0 #000;
+            transform: rotate(-1deg);
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #ccc;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 10px;
+        }
+
+        .video-placeholder {
+            width: 100%;
+            height: 390px;
+            background: #111;
+            border: 3px solid #ff0000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .controls-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #111;
+            border: 2px solid #333;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .control-item {
+            flex: 1;
+            padding: 12px;
+            background: #222;
+            border: 2px solid #444;
+            color: #fff;
+            text-align: center;
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+        }
+
+        /* Playback Speed Section */
+        .speed-presets-section {
+            width: 100%;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .speed-presets-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 530px;
+        }
+
+        .speed-presets-label {
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
+        }
+
+        .speed-presets-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .speed-preset-btn {
+            padding: 10px 20px;
+            background: #000;
+            border: 3px solid #fff;
+            color: #fff;
+            font-family: 'Oswald', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 4px 4px 0px #666;
+            min-width: 70px;
+        }
+
+        .speed-preset-btn.active {
+            border-color: #ff0000;
+            color: #ff0000;
+            box-shadow: 4px 4px 0px #ff0000;
+        }
+
+        /* Volume Control Section */
+        .volume-control-section {
+            width: 100%;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .volume-control-label {
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
+        }
+
+        .volume-control-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 530px;
+        }
+
+        .volume-slider {
+            height: 8px;
+            background: #333;
+            border: 2px solid #666;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            /* Match width of playback speed buttons row exactly */
+            width: 100%;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ff0000;
+            border: 2px solid #000;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #ff0000;
+            border: 2px solid #000;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #000;
+        }
+
+
+        .button-row {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .button-row-wrapper {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            max-width: 530px;
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            font-family: 'Oswald', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: 3px solid;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn-start {
+            background: #000;
+            border-color: #00ff00;
+            color: #00ff00;
+            box-shadow: 4px 4px 0px #00ff00;
+        }
+
+        .btn-stop {
+            background: #000;
+            border-color: #ff0000;
+            color: #ff0000;
+            box-shadow: 4px 4px 0px #ff0000;
+        }
+
+        .btn-reset {
+            background: #000;
+            border-color: #0066ff;
+            color: #0066ff;
+            box-shadow: 4px 4px 0px #0066ff;
+        }
+
+        .status-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #111;
+            border: 2px solid #333;
+            text-align: center;
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+            font-size: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .volume-control-wrapper {
+                width: 100%;
+            }
+
+            .volume-slider {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mockup-container">
+        <div class="title-section">
+            <h1 class="title">Music Looper</h1>
+            <p class="subtitle">by Vibey Craft</p>
+            <p class="subtitle" style="margin-top: 10px;">Loop sections of songs to perfect your practice</p>
+        </div>
+
+        <div class="video-placeholder">
+            [YouTube Video Player - 640x390]
+        </div>
+
+        <div class="controls-section">
+            <div class="controls-row">
+                <div class="control-item">Start Time: 0:46</div>
+                <div class="control-item">End Time: 1:30</div>
+                <div class="control-item">Target Loops: 5</div>
+            </div>
+        </div>
+
+        <!-- Volume Control Section (NEW) - Above Playback Speed -->
+        <div class="volume-control-section">
+            <div class="volume-control-label" style="text-align: center;">Volume</div>
+            <div class="volume-control-wrapper">
+                <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value="75" 
+                    class="volume-slider" 
+                    id="volumeSlider"
+                />
+            </div>
+        </div>
+
+        <!-- Playback Speed Section (Existing) -->
+        <div class="speed-presets-section">
+            <div class="speed-presets-container">
+                <div class="speed-presets-label">Playback Speed</div>
+                <div class="speed-presets-buttons">
+                    <button class="speed-preset-btn">0.5x</button>
+                    <button class="speed-preset-btn">0.75x</button>
+                    <button class="speed-preset-btn active">1x</button>
+                    <button class="speed-preset-btn">1.25x</button>
+                    <button class="speed-preset-btn">1.5x</button>
+                    <button class="speed-preset-btn">2x</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="button-row">
+            <div class="button-row-wrapper">
+                <button class="btn btn-start">START LOOP</button>
+                <button class="btn btn-stop">STOP</button>
+                <button class="btn btn-reset">RESET</button>
+            </div>
+        </div>
+
+        <div class="status-section">
+            Loop 2 / 5 (40%)<br>
+            Current: 1:23
+        </div>
+    </div>
+
+    <script>
+        // Volume slider - no percentage display needed
+    </script>
+</body>
+</html>
+

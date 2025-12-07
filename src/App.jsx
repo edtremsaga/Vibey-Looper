@@ -70,6 +70,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [hasBeenStopped, setHasBeenStopped] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [volume, setVolume] = useState(75) // Volume control (0-100)
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -139,9 +140,12 @@ function App() {
           onReady: (event) => {
             setPlayer(event.target)
             setIsLoading(false)
-            // Set initial playback speed
+            // Set initial playback speed and volume
             if (event.target.setPlaybackRate) {
               event.target.setPlaybackRate(playbackSpeed)
+            }
+            if (event.target.setVolume) {
+              event.target.setVolume(volume)
             }
           },
             onError: (event) => {
@@ -219,6 +223,18 @@ function App() {
       }
     }
   }, [playbackSpeed, player])
+
+  // Update volume when it changes
+  useEffect(() => {
+    if (player && player.setVolume) {
+      try {
+        player.setVolume(volume)
+      } catch (error) {
+        // Silently handle volume errors (may fail if video isn't ready)
+        console.warn('Failed to set volume:', error)
+      }
+    }
+  }, [volume, player])
 
   // Check video time and handle looping
   useEffect(() => {
@@ -443,6 +459,11 @@ function App() {
       handleYouTubeSearch()
     }
   }, [handleYouTubeSearch])
+
+  const handleVolumeChange = useCallback((e) => {
+    const newVolume = parseInt(e.target.value, 10)
+    setVolume(newVolume)
+  }, [])
 
   // Memoize progress calculations to avoid recalculating on every render
   const loopProgress = useMemo(() => {
@@ -708,51 +729,63 @@ function App() {
         </div>
       </div>
 
+      {/* Volume Control Section - Above Playback Speed */}
+      <div className="volume-control-section">
+        <div className="volume-control-label">Volume</div>
+        <div className="volume-control-wrapper">
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={volume}
+            onChange={handleVolumeChange}
+            className="volume-slider"
+            id="volumeSlider"
+          />
+        </div>
+      </div>
+
       <div className="speed-presets-section">
-        <div className="speed-presets-label">Playback Speed</div>
-        <div className="speed-presets-buttons">
+        <div className="speed-presets-container">
+          <div className="speed-presets-label">Playback Speed</div>
+          <div className="speed-presets-buttons">
           <button
             className={`speed-preset-btn ${playbackSpeed === 0.5 ? 'active' : ''}`}
             onClick={() => setPlaybackSpeed(0.5)}
-            disabled={isPlaying}
           >
             0.5x
           </button>
           <button
             className={`speed-preset-btn ${playbackSpeed === 0.75 ? 'active' : ''}`}
             onClick={() => setPlaybackSpeed(0.75)}
-            disabled={isPlaying}
           >
             0.75x
           </button>
           <button
             className={`speed-preset-btn ${playbackSpeed === 1 ? 'active' : ''}`}
             onClick={() => setPlaybackSpeed(1)}
-            disabled={isPlaying}
           >
             1x
           </button>
           <button
             className={`speed-preset-btn ${playbackSpeed === 1.25 ? 'active' : ''}`}
             onClick={() => setPlaybackSpeed(1.25)}
-            disabled={isPlaying}
           >
             1.25x
           </button>
           <button
             className={`speed-preset-btn ${playbackSpeed === 1.5 ? 'active' : ''}`}
             onClick={() => setPlaybackSpeed(1.5)}
-            disabled={isPlaying}
           >
             1.5x
           </button>
           <button
             className={`speed-preset-btn ${playbackSpeed === 2 ? 'active' : ''}`}
             onClick={() => setPlaybackSpeed(2)}
-            disabled={isPlaying}
           >
             2x
           </button>
+          </div>
         </div>
       </div>
 
@@ -774,27 +807,29 @@ function App() {
       )}
 
       <div className="buttons-row">
-        <button
-          className="btn btn-start"
-          onClick={handleStart}
-          disabled={!player || isPlaying || !apiReady || !!validationError || endTime <= startTime}
-        >
-          Start Loop
-        </button>
-        <button
-          className="btn btn-stop"
-          onClick={handleStop}
-          disabled={!player}
-        >
-          {isPlaying ? 'Stop' : (hasBeenStopped ? 'Resume' : 'Stop')}
-        </button>
-        <button
-          className="btn btn-reset"
-          onClick={handleReset}
-          disabled={!player}
-        >
-          Reset
-        </button>
+        <div className="button-row-wrapper">
+          <button
+            className="btn btn-start"
+            onClick={handleStart}
+            disabled={!player || isPlaying || !apiReady || !!validationError || endTime <= startTime}
+          >
+            Start Loop
+          </button>
+          <button
+            className="btn btn-stop"
+            onClick={handleStop}
+            disabled={!player}
+          >
+            {isPlaying ? 'Stop' : (hasBeenStopped ? 'Resume' : 'Stop')}
+          </button>
+          <button
+            className="btn btn-reset"
+            onClick={handleReset}
+            disabled={!player}
+          >
+            Reset
+          </button>
+        </div>
       </div>
 
       <div className="status">
@@ -810,7 +845,6 @@ function App() {
           </div>
         )}
       </div>
-
 
           {/* Help and Feedback links at bottom */}
           <div className="help-link-bottom">
