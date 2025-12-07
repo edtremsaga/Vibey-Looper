@@ -144,7 +144,8 @@ function App() {
             if (event.target.setPlaybackRate) {
               event.target.setPlaybackRate(playbackSpeed)
             }
-            if (event.target.setVolume) {
+            // iOS Safari doesn't support programmatic volume control
+            if (!isMobile && event.target.setVolume) {
               event.target.setVolume(volume)
             }
           },
@@ -226,6 +227,12 @@ function App() {
 
   // Update volume when it changes
   useEffect(() => {
+    // iOS Safari doesn't support programmatic volume control
+    // Volume must be controlled via device volume buttons on iOS
+    if (isMobile) {
+      return
+    }
+    
     if (player && player.setVolume) {
       try {
         player.setVolume(volume)
@@ -234,7 +241,7 @@ function App() {
         console.warn('Failed to set volume:', error)
       }
     }
-  }, [volume, player])
+  }, [volume, player, isMobile])
 
   // Check video time and handle looping
   useEffect(() => {
@@ -730,20 +737,22 @@ function App() {
       </div>
 
       {/* Volume Control Section - Above Playback Speed */}
-      <div className="volume-control-section">
-        <div className="volume-control-label">Volume</div>
-        <div className="volume-control-wrapper">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={volume}
-            onChange={handleVolumeChange}
-            className="volume-slider"
-            id="volumeSlider"
-          />
+      {!isMobile && (
+        <div className="volume-control-section">
+          <div className="volume-control-label">Volume</div>
+          <div className="volume-control-wrapper">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={volume}
+              onChange={handleVolumeChange}
+              className="volume-slider"
+              id="volumeSlider"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="speed-presets-section">
         <div className="speed-presets-container">
