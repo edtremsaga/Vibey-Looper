@@ -739,6 +739,15 @@ function App() {
             disabled={isPlaying}
           />
         </div>
+
+        {!isMobile && endTime > startTime && (
+          <div className="input-group loop-duration-group">
+            <label>Loop Duration</label>
+            <div className="loop-duration-display-box">
+              {secondsToMMSS(endTime - startTime)}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Volume Control Section - Above Playback Speed */}
