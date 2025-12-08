@@ -472,6 +472,11 @@ function App() {
     setVolume(newVolume)
   }, [])
 
+  const handlePlaybackSpeedChange = useCallback((e) => {
+    const newSpeed = parseFloat(e.target.value)
+    setPlaybackSpeed(newSpeed)
+  }, [])
+
   // Memoize progress calculations to avoid recalculating on every render
   const loopProgress = useMemo(() => {
     if (!isPlaying || endTime <= startTime) return 0
@@ -795,6 +800,24 @@ function App() {
             2x
           </button>
           </div>
+          {/* Playback Speed Slider - Desktop Only */}
+          {!isMobile && (
+            <div className="speed-slider-wrapper">
+              <div className="speed-slider-label">
+                {playbackSpeed.toFixed(2)}x
+              </div>
+              <input
+                type="range"
+                min="0.25"
+                max="2.0"
+                step="0.05"
+                value={playbackSpeed}
+                onChange={handlePlaybackSpeedChange}
+                className="speed-slider"
+                id="speedSlider"
+              />
+            </div>
+          )}
         </div>
       </div>
 
