@@ -419,6 +419,14 @@ function App() {
 
   const handleReset = useCallback(() => {
     try {
+      // Reset to default values
+      setStartTime(0)
+      setEndTime(10)
+      setStartTimeDisplay('0:00')
+      setEndTimeDisplay('0:10')
+      setTargetLoops(5)
+      setTargetLoopsDisplay('5')
+      
       if (player) {
         if (player.pauseVideo) {
           try {
@@ -429,7 +437,7 @@ function App() {
         }
         if (player.seekTo) {
           try {
-            player.seekTo(startTime, true)
+            player.seekTo(0, true) // Seek to default start time (0)
           } catch (error) {
             console.warn('Failed to seek video on reset:', error)
             setValidationError('Failed to reset video position. Please try again.')
@@ -444,7 +452,7 @@ function App() {
       console.error('Error in handleReset:', error)
       setValidationError('An error occurred while resetting. Please try again.')
     }
-  }, [player, startTime])
+  }, [player])
 
   const handleVideoIdChange = useCallback((newVideoId) => {
     setVideoId(newVideoId)
