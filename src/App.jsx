@@ -76,6 +76,51 @@ const loadRecentVideos = () => {
   }
 }
 
+// App default video (fallback)
+const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
+
+// Helper function to save user's default video to localStorage
+const saveDefaultVideo = (videoId, title = '', author = '', thumbnail = '') => {
+  try {
+    const defaultVideo = {
+      videoId: extractVideoId(videoId),
+      url: videoId,
+      title,
+      author,
+      thumbnail,
+      timestamp: Date.now()
+    }
+    localStorage.setItem('defaultVideo', JSON.stringify(defaultVideo))
+    return defaultVideo
+  } catch (error) {
+    console.warn('Failed to save default video:', error)
+    return null
+  }
+}
+
+// Helper function to load user's default video from localStorage
+const loadDefaultVideo = () => {
+  try {
+    const stored = localStorage.getItem('defaultVideo')
+    if (stored) {
+      return JSON.parse(stored)
+    }
+    return null
+  } catch (error) {
+    console.warn('Failed to load default video:', error)
+    return null
+  }
+}
+
+// Helper function to clear user's default video (reset to app default)
+const clearDefaultVideo = () => {
+  try {
+    localStorage.removeItem('defaultVideo')
+  } catch (error) {
+    console.warn('Failed to clear default video:', error)
+  }
+}
+
 // Helper function to fetch video title from YouTube oEmbed API (free, no API key needed)
 const fetchVideoTitle = async (videoId) => {
   try {
@@ -114,7 +159,13 @@ const getYouTubeErrorMessage = (errorCode) => {
 }
 
 function App() {
-  const [videoId, setVideoId] = useState('https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1')
+  // Load user's default video on mount, or use app default
+  const [videoId, setVideoId] = useState(() => {
+    const userDefault = loadDefaultVideo()
+    return userDefault ? userDefault.url : APP_DEFAULT_VIDEO
+  })
+  const [userDefaultVideo, setUserDefaultVideo] = useState(null)
+  const [isDefaultVideo, setIsDefaultVideo] = useState(false)
   const [startTime, setStartTime] = useState(0)
   const [endTime, setEndTime] = useState(10)
   const [startTimeDisplay, setStartTimeDisplay] = useState('0:00')
@@ -164,12 +215,24 @@ function App() {
 
   // Load recent videos on mount
   useEffect(() => {
-    // TEMPORARY: Clear recent videos for testing - remove this after testing
-    localStorage.removeItem('recentVideos')
-    setRecentVideos([])
-    // Original code (commented out for testing):
-    // setRecentVideos(loadRecentVideos())
+    setRecentVideos(loadRecentVideos())
   }, [])
+
+  // Load user's default video on mount
+  useEffect(() => {
+    const defaultVideo = loadDefaultVideo()
+    setUserDefaultVideo(defaultVideo)
+  }, [])
+
+  // Check if current video is the default
+  useEffect(() => {
+    const currentVideoId = extractVideoId(videoId)
+    if (userDefaultVideo && currentVideoId === userDefaultVideo.videoId) {
+      setIsDefaultVideo(true)
+    } else {
+      setIsDefaultVideo(false)
+    }
+  }, [videoId, userDefaultVideo])
 
   // Fetch default video info on mount and save to recent videos
   useEffect(() => {
@@ -773,6 +836,58 @@ function App() {
     setShowRecentVideos(false)
   }, [])
 
+  const handleSetAsDefault = useCallback(async () => {
+    const extractedId = extractVideoId(videoId)
+    if (!extractedId || extractedId.length !== 11) {
+      setValidationError('Please load a valid video first')
+      return
+    }
+    
+    // Use existing video info if available, otherwise fetch it
+    let videoInfo = { 
+      title: videoTitle || '', 
+      author: videoAuthor || '', 
+      thumbnail: videoThumbnail || '' 
+    }
+    
+    // Fetch video info if we don't have it or only have placeholder
+    if (!videoInfo.title || videoInfo.title.startsWith('Video ')) {
+      const fetched = await fetchVideoTitle(extractedId)
+      if (fetched) {
+        videoInfo = fetched
+        setVideoTitle(fetched.title)
+        setVideoAuthor(fetched.author)
+        setVideoThumbnail(fetched.thumbnail)
+      }
+    }
+    
+    // Save as default
+    const saved = saveDefaultVideo(
+      videoId,
+      videoInfo.title || `Video ${extractedId}`,
+      videoInfo.author || '',
+      videoInfo.thumbnail || ''
+    )
+    
+    if (saved) {
+      setUserDefaultVideo(saved)
+      setIsDefaultVideo(true)
+      // Show brief confirmation (you could add a toast notification here)
+      setValidationError('') // Clear any errors
+    }
+  }, [videoId, videoTitle, videoAuthor, videoThumbnail])
+
+  const handleClearDefault = useCallback(() => {
+    // Reset to app default if current video was the user default
+    const currentVideoId = extractVideoId(videoId)
+    if (userDefaultVideo && currentVideoId === userDefaultVideo.videoId) {
+      setVideoId(APP_DEFAULT_VIDEO)
+    }
+    clearDefaultVideo()
+    setUserDefaultVideo(null)
+    setIsDefaultVideo(false)
+  }, [videoId, userDefaultVideo])
+
   const handleYouTubeSearch = useCallback(() => {
     if (searchQuery.trim()) {
       const encodedQuery = encodeURIComponent(searchQuery.trim())
@@ -971,22 +1086,37 @@ function App() {
       <div className="input-group">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <label htmlFor="video-id">URL or Video ID of song from YouTube</label>
-          {recentVideos.length > 0 && (
-            <div className="recent-videos-wrapper">
-              <button
-                type="button"
-                className="recent-videos-toggle"
-                onClick={() => setShowRecentVideos(!showRecentVideos)}
-              >
-                📋 Recent ({recentVideos.length})
-              </button>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div className="default-video-controls">
+              {player && (
+                <button
+                  type="button"
+                  className={isDefaultVideo ? "btn-default-toggle active" : "btn-default-toggle"}
+                  onClick={isDefaultVideo ? handleClearDefault : handleSetAsDefault}
+                  title={isDefaultVideo ? "Remove as default video" : "Set this video as your default"}
+                >
+                  ★
+                </button>
+              )}
+            </div>
+            {recentVideos.length > 0 && (
+              <div className="recent-videos-wrapper">
+                <button
+                  type="button"
+                  className="recent-videos-toggle"
+                  onClick={() => setShowRecentVideos(!showRecentVideos)}
+                >
+                  📋 Recent ({recentVideos.length})
+                </button>
               {showRecentVideos && (
                 <div className="recent-videos-dropdown">
-                  {recentVideos.map((video, index) => (
+                  {recentVideos.map((video, index) => {
+                    const isDefault = userDefaultVideo && userDefaultVideo.videoId === video.videoId
+                    return (
                     <button
                       key={index}
                       type="button"
-                      className="recent-video-item"
+                      className={`recent-video-item ${isDefault ? 'is-default' : ''}`}
                       onClick={() => handleRecentVideoSelect(video)}
                     >
                       {video.thumbnail && (
@@ -1009,12 +1139,17 @@ function App() {
                           <span className="recent-video-id">{video.videoId}</span>
                         )}
                       </div>
+                      {isDefault && (
+                        <span className="default-badge">⭐ Default</span>
+                      )}
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
         <input
           id="video-id"
