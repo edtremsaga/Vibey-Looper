@@ -213,6 +213,39 @@ function App() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Helper to detect if device is iPhone (not iPad or MacBook)
+  const isIPhone = useMemo(() => {
+    if (typeof window === 'undefined') return false
+    const userAgent = window.navigator.userAgent.toLowerCase()
+    // Check if it's specifically an iPhone (not iPad)
+    const isIPhoneDevice = /iphone/.test(userAgent) && !/ipad/.test(userAgent)
+    return isIPhoneDevice
+  }, [])
+
+  // Handle Delete key to clear entire input (iPad and MacBook only, not iPhone)
+  const handleInputKeyDown = useCallback((e, setValue) => {
+    // Only work on iPad and MacBook, not iPhone
+    if (isIPhone) return
+    
+    // Check for Delete key (on Mac, the Delete key sends "Backspace")
+    if ((e.key === 'Delete' || e.key === 'Backspace') && e.target === document.activeElement) {
+      const input = e.target
+      const allSelected = input.selectionStart === 0 && input.selectionEnd === input.value.length
+      const cursorAtStart = input.selectionStart === 0 && input.selectionEnd === 0
+      const hasModifier = e.metaKey || e.ctrlKey || e.altKey // Cmd, Ctrl, or Option
+      
+      // Clear entire input if:
+      // 1. All text is selected, OR
+      // 2. Cursor is at start and Delete is pressed, OR  
+      // 3. Modifier key is held with Delete
+      if (input.value && (allSelected || (cursorAtStart && e.key === 'Backspace') || hasModifier)) {
+        e.preventDefault()
+        setValue('')
+        input.focus() // Keep focus on the input
+      }
+    }
+  }, [isIPhone])
+
   // Load recent videos on mount
   useEffect(() => {
     setRecentVideos(loadRecentVideos())
@@ -1067,6 +1100,7 @@ function App() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleSearchKeyPress}
+              onKeyDown={(e) => handleInputKeyDown(e, setSearchQuery)}
               placeholder="Type song name or artist..."
               className="search-input"
             />
@@ -1139,9 +1173,6 @@ function App() {
                           <span className="recent-video-id">{video.videoId}</span>
                         )}
                       </div>
-                      {isDefault && (
-                        <span className="default-badge">⭐ Default</span>
-                      )}
                     </button>
                     )
                   })}
@@ -1156,6 +1187,7 @@ function App() {
           type="text"
           value={videoId}
           onChange={(e) => handleVideoIdChange(e.target.value)}
+          onKeyDown={(e) => handleInputKeyDown(e, setVideoId)}
           onFocus={() => setShowRecentVideos(false)}
           placeholder="Enter URL or Video ID of song from YouTube"
           disabled={!apiReady}
