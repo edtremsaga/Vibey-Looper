@@ -50,6 +50,69 @@ const extractVideoId = (input) => {
   return input.trim()
 }
 
+// Helper function to save recent video to localStorage
+const saveRecentVideo = (videoId, title = '', author = '', thumbnail = '') => {
+  try {
+    const recent = JSON.parse(localStorage.getItem('recentVideos') || '[]')
+    const newRecent = [
+      { videoId, title, author, thumbnail, timestamp: Date.now() },
+      ...recent.filter(v => v.videoId !== videoId)
+    ].slice(0, 10) // Keep last 10
+    localStorage.setItem('recentVideos', JSON.stringify(newRecent))
+    return newRecent
+  } catch (error) {
+    console.warn('Failed to save recent video:', error)
+    return []
+  }
+}
+
+// Helper function to load recent videos from localStorage
+const loadRecentVideos = () => {
+  try {
+    return JSON.parse(localStorage.getItem('recentVideos') || '[]')
+  } catch (error) {
+    console.warn('Failed to load recent videos:', error)
+    return []
+  }
+}
+
+// Helper function to fetch video title from YouTube oEmbed API (free, no API key needed)
+const fetchVideoTitle = async (videoId) => {
+  try {
+    const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+    const response = await fetch(url)
+    if (response.ok) {
+      const data = await response.json()
+      return {
+        title: data.title,
+        author: data.author_name,
+        thumbnail: data.thumbnail_url
+      }
+    }
+    return null
+  } catch (error) {
+    console.warn('Failed to fetch video title:', error)
+    return null
+  }
+}
+
+// Helper function to get better error message from YouTube error code
+const getYouTubeErrorMessage = (errorCode) => {
+  switch (errorCode) {
+    case 2:
+      return 'Invalid video ID. Please check the URL or Video ID.'
+    case 5:
+      return 'The HTML5 player cannot be found. Please refresh the page.'
+    case 100:
+      return 'Video not found. It may have been removed or made private.'
+    case 101:
+    case 150:
+      return 'Video is not available for embedding. It may be private or restricted.'
+    default:
+      return 'Failed to load video. Please check the URL or Video ID and try again.'
+  }
+}
+
 function App() {
   const [videoId, setVideoId] = useState('https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1')
   const [startTime, setStartTime] = useState(0)
@@ -71,6 +134,12 @@ function App() {
   const [hasBeenStopped, setHasBeenStopped] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [volume, setVolume] = useState(75) // Volume control (0-100)
+  const [videoDuration, setVideoDuration] = useState(null)
+  const [videoTitle, setVideoTitle] = useState('')
+  const [videoThumbnail, setVideoThumbnail] = useState('')
+  const [videoAuthor, setVideoAuthor] = useState('')
+  const [recentVideos, setRecentVideos] = useState([])
+  const [showRecentVideos, setShowRecentVideos] = useState(false)
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -92,6 +161,104 @@ function App() {
     
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Load recent videos on mount
+  useEffect(() => {
+    // TEMPORARY: Clear recent videos for testing - remove this after testing
+    localStorage.removeItem('recentVideos')
+    setRecentVideos([])
+    // Original code (commented out for testing):
+    // setRecentVideos(loadRecentVideos())
+  }, [])
+
+  // Fetch default video info on mount and save to recent videos
+  useEffect(() => {
+    const defaultVideoId = extractVideoId(videoId)
+    if (defaultVideoId && defaultVideoId.length === 11) {
+      // Check if default video is already in recent videos
+      const currentRecent = loadRecentVideos()
+      const isAlreadyInRecent = currentRecent.some(v => v.videoId === defaultVideoId)
+      
+      if (!isAlreadyInRecent) {
+        // Fetch video info and save to recent videos
+        fetchVideoTitle(defaultVideoId).then(videoInfo => {
+          if (videoInfo) {
+            const updated = saveRecentVideo(
+              defaultVideoId,
+              videoInfo.title,
+              videoInfo.author,
+              videoInfo.thumbnail
+            )
+            setRecentVideos(updated)
+            setVideoTitle(videoInfo.title)
+            setVideoThumbnail(videoInfo.thumbnail)
+            setVideoAuthor(videoInfo.author)
+          } else {
+            // Save with placeholder if fetch fails
+            const updated = saveRecentVideo(defaultVideoId, `Video ${defaultVideoId}`, '', '')
+            setRecentVideos(updated)
+          }
+        }).catch(() => {
+          // Save with placeholder on error
+          const updated = saveRecentVideo(defaultVideoId, `Video ${defaultVideoId}`, '', '')
+          setRecentVideos(updated)
+        })
+      } else {
+        // Video already in recent, just set the state from existing data
+        const existingVideo = currentRecent.find(v => v.videoId === defaultVideoId)
+        if (existingVideo) {
+          setVideoTitle(existingVideo.title || '')
+          setVideoThumbnail(existingVideo.thumbnail || '')
+          setVideoAuthor(existingVideo.author || '')
+        }
+      }
+    }
+  }, []) // Only run on mount
+
+  // Update video info when videoId changes
+  useEffect(() => {
+    const extractedId = extractVideoId(videoId)
+    if (extractedId && extractedId.length === 11) {
+      // Fetch video info when videoId changes
+      fetchVideoTitle(extractedId).then(videoInfo => {
+        if (videoInfo) {
+          setVideoTitle(videoInfo.title)
+          setVideoThumbnail(videoInfo.thumbnail)
+          setVideoAuthor(videoInfo.author)
+        } else {
+          // Clear if fetch fails
+          setVideoTitle('')
+          setVideoThumbnail('')
+          setVideoAuthor('')
+        }
+      }).catch(() => {
+        // Clear on error
+        setVideoTitle('')
+        setVideoThumbnail('')
+        setVideoAuthor('')
+      })
+    } else {
+      // Clear if invalid video ID
+      setVideoTitle('')
+      setVideoThumbnail('')
+      setVideoAuthor('')
+    }
+    setVideoDuration(null)
+  }, [videoId])
+
+  // Close recent videos dropdown when clicking outside
+  useEffect(() => {
+    if (!showRecentVideos) return
+
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.recent-videos-wrapper')) {
+        setShowRecentVideos(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showRecentVideos])
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -137,7 +304,7 @@ function App() {
             playsinline: 1,
           },
           events: {
-          onReady: (event) => {
+          onReady: async (event) => {
             setPlayer(event.target)
             setIsLoading(false)
             // Set initial playback speed and volume
@@ -148,10 +315,87 @@ function App() {
             if (!isMobile && event.target.setVolume) {
               event.target.setVolume(volume)
             }
+            
+            // Get video duration (may not be available immediately)
+            setTimeout(() => {
+              try {
+                const duration = event.target.getDuration()
+                if (duration && duration > 0) {
+                  setVideoDuration(duration)
+                }
+              } catch (error) {
+                // Duration not available yet, will be fetched by useEffect
+                console.warn('Duration not available yet')
+              }
+            }, 500)
+            
+            // Fetch and save video info to recent videos
+            const extractedId = extractVideoId(videoId)
+            if (extractedId && extractedId.length === 11) {
+              // Fetch video info asynchronously
+              fetchVideoTitle(extractedId).then(videoInfo => {
+                if (videoInfo) {
+                  const updated = saveRecentVideo(
+                    extractedId, 
+                    videoInfo.title, 
+                    videoInfo.author, 
+                    videoInfo.thumbnail
+                  )
+                  setRecentVideos(updated)
+                  setVideoTitle(videoInfo.title)
+                  setVideoThumbnail(videoInfo.thumbnail)
+                  setVideoAuthor(videoInfo.author)
+                } else {
+                  // Fallback if fetch fails
+                  const updated = saveRecentVideo(extractedId, `Video ${extractedId}`, '', '')
+                  setRecentVideos(updated)
+                }
+              }).catch(() => {
+                // Fallback on error
+                const updated = saveRecentVideo(extractedId, `Video ${extractedId}`, '', '')
+                setRecentVideos(updated)
+              })
+            }
+          },
+          onStateChange: (event) => {
+            // When video starts playing or buffering, it means it loaded successfully
+            // State: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
+            if (event.data === 1 || event.data === 3) {
+              // Use currentVideoIdRef to get the most current video ID
+              const currentId = currentVideoIdRef.current
+              const extractedId = extractVideoId(currentId)
+              if (extractedId && extractedId.length === 11) {
+                // Check if we already have this video in recent (to avoid duplicate fetches)
+                const currentRecent = loadRecentVideos()
+                const existingVideo = currentRecent.find(v => v.videoId === extractedId)
+                
+                if (!existingVideo || !existingVideo.title || existingVideo.title.startsWith('Video ')) {
+                  // Fetch video info if we don't have it or only have placeholder
+                  fetchVideoTitle(extractedId).then(videoInfo => {
+                    if (videoInfo) {
+                      const updated = saveRecentVideo(
+                        extractedId, 
+                        videoInfo.title, 
+                        videoInfo.author, 
+                        videoInfo.thumbnail
+                      )
+                      setRecentVideos(updated)
+                      setVideoTitle(videoInfo.title)
+                      setVideoThumbnail(videoInfo.thumbnail)
+                      setVideoAuthor(videoInfo.author)
+                    }
+                  }).catch(() => {
+                    // Silently fail - video will be saved with placeholder
+                  })
+                }
+              }
+            }
           },
             onError: (event) => {
               setIsLoading(false)
-              setValidationError('Failed to load video. Please check the URL or Video ID.')
+              const errorCode = event.data
+              const errorMessage = getYouTubeErrorMessage(errorCode)
+              setValidationError(errorMessage)
               playerInitializedRef.current = false
             },
           },
@@ -187,6 +431,31 @@ function App() {
         
         loadingTimeoutRef.current = setTimeout(() => {
           setIsLoading(false)
+          // Fetch and save video info to recent videos after successful load
+          if (extractedId && extractedId.length === 11) {
+            fetchVideoTitle(extractedId).then(videoInfo => {
+              if (videoInfo) {
+                const updated = saveRecentVideo(
+                  extractedId, 
+                  videoInfo.title, 
+                  videoInfo.author, 
+                  videoInfo.thumbnail
+                )
+                setRecentVideos(updated)
+                setVideoTitle(videoInfo.title)
+                setVideoThumbnail(videoInfo.thumbnail)
+                setVideoAuthor(videoInfo.author)
+              } else {
+                // Fallback if fetch fails
+                const updated = saveRecentVideo(extractedId, `Video ${extractedId}`, '', '')
+                setRecentVideos(updated)
+              }
+            }).catch(() => {
+              // Fallback on error
+              const updated = saveRecentVideo(extractedId, `Video ${extractedId}`, '', '')
+              setRecentVideos(updated)
+            })
+          }
           loadingTimeoutRef.current = null
         }, 1000)
       } catch (error) {
@@ -204,11 +473,46 @@ function App() {
     }
   }, [videoId, player])
 
+  // Get video duration when player is ready and video is loaded
+  useEffect(() => {
+    if (!player || !player.getDuration) return
+
+    const getDuration = () => {
+      try {
+        const duration = player.getDuration()
+        if (duration && duration > 0 && !isNaN(duration)) {
+          setVideoDuration(duration)
+        } else {
+          // Duration might not be available immediately, try again
+          setTimeout(() => {
+            if (player && player.getDuration) {
+              try {
+                const dur = player.getDuration()
+                if (dur && dur > 0 && !isNaN(dur)) {
+                  setVideoDuration(dur)
+                }
+              } catch (e) {
+                // Duration still not available
+              }
+            }
+          }, 1000)
+        }
+      } catch (error) {
+        // Duration not available yet, will retry
+      }
+    }
+
+    // Try to get duration after a short delay to ensure video is loaded
+    const timer = setTimeout(getDuration, 500)
+    return () => clearTimeout(timer)
+  }, [player, videoId])
+
   // Validate times
   useEffect(() => {
     if (endTime <= startTime) {
       setValidationError('End time must be greater than start time')
-    } else {
+    } else if (validationError === 'End time must be greater than start time') {
+      // Only clear time validation errors, not YouTube errors
       setValidationError('')
     }
   }, [startTime, endTime])
@@ -457,7 +761,16 @@ function App() {
   const handleVideoIdChange = useCallback((newVideoId) => {
     setVideoId(newVideoId)
     setValidationError('')
+    setShowRecentVideos(false)
     // Video loading will be handled by the useEffect watching videoId
+  }, [])
+
+  const handleRecentVideoSelect = useCallback((recentVideo) => {
+    const url = `https://www.youtube.com/watch?v=${recentVideo.videoId}`
+    setVideoId(url)
+    setVideoTitle(recentVideo.title || '')
+    setValidationError('')
+    setShowRecentVideos(false)
   }, [])
 
   const handleYouTubeSearch = useCallback(() => {
@@ -656,18 +969,68 @@ function App() {
       </div>
 
       <div className="input-group">
-        <label htmlFor="video-id">URL or Video ID of song from YouTube</label>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <label htmlFor="video-id">URL or Video ID of song from YouTube</label>
+          {recentVideos.length > 0 && (
+            <div className="recent-videos-wrapper">
+              <button
+                type="button"
+                className="recent-videos-toggle"
+                onClick={() => setShowRecentVideos(!showRecentVideos)}
+              >
+                📋 Recent ({recentVideos.length})
+              </button>
+              {showRecentVideos && (
+                <div className="recent-videos-dropdown">
+                  {recentVideos.map((video, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      className="recent-video-item"
+                      onClick={() => handleRecentVideoSelect(video)}
+                    >
+                      {video.thumbnail && (
+                        <img 
+                          src={video.thumbnail} 
+                          alt={video.title || 'Video thumbnail'}
+                          className="recent-video-thumbnail"
+                          onError={(e) => {
+                            // Fallback to default thumbnail if image fails to load
+                            e.target.style.display = 'none'
+                          }}
+                        />
+                      )}
+                      <div className="recent-video-info">
+                        <span className="recent-video-title">{video.title || `Video ${video.videoId}`}</span>
+                        {video.author && (
+                          <span className="recent-video-author">{video.author}</span>
+                        )}
+                        {!video.author && (
+                          <span className="recent-video-id">{video.videoId}</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <input
           id="video-id"
           type="text"
           value={videoId}
           onChange={(e) => handleVideoIdChange(e.target.value)}
+          onFocus={() => setShowRecentVideos(false)}
           placeholder="Enter URL or Video ID of song from YouTube"
           disabled={!apiReady}
           autoFocus
         />
         {isLoading && (
           <div className="loading-indicator">Loading video...</div>
+        )}
+        {validationError && (
+          <span className="error-message">{validationError}</span>
         )}
       </div>
 
