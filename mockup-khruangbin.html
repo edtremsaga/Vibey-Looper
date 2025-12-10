@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibey Looper - Khruangbin Inspired Mockup</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f3f0;
+            color: #2a2a2a;
+            min-height: 100vh;
+            padding: 40px 20px;
+            position: relative;
+        }
+        
+        /* Natural light and shadow effects */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(225deg, rgba(200, 200, 200, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .app {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 40px 0;
+        }
+        
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: 64px;
+            font-weight: 400;
+            font-style: italic;
+            letter-spacing: -1px;
+            margin: 20px 0;
+            color: #2a2a2a;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #2a2a2a 20%, #2a2a2a 80%, transparent);
+            opacity: 0.3;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-top: 20px;
+            color: #666;
+        }
+        
+        .content-section {
+            background: #fff;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.04),
+                0 1px 2px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .input-group {
+            margin-bottom: 30px;
+        }
+        
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            color: #666;
+        }
+        
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 14px 16px;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            color: #2a2a2a;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 400;
+            transition: all 0.3s ease;
+        }
+        
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #2a2a2a;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(42, 42, 42, 0.05);
+        }
+        
+        .input-group input::placeholder {
+            color: #999;
+            font-weight: 300;
+        }
+        
+        .controls-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .video-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            margin: 40px 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 8px 24px rgba(0, 0, 0, 0.12),
+                0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Geometric shadow effect */
+        .video-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                repeating-linear-gradient(90deg, 
+                    transparent 0px, 
+                    transparent 1px, 
+                    rgba(255, 255, 255, 0.02) 1px, 
+                    rgba(255, 255, 255, 0.02) 2px),
+                repeating-linear-gradient(0deg, 
+                    transparent 0px, 
+                    transparent 1px, 
+                    rgba(255, 255, 255, 0.02) 1px, 
+                    rgba(255, 255, 255, 0.02) 2px);
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .video-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 13px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .buttons-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 40px 0;
+        }
+        
+        .btn {
+            padding: 14px 32px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            background: #fff;
+            border: 1px solid #2a2a2a;
+            color: #2a2a2a;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 140px;
+        }
+        
+        .btn:hover {
+            background: #2a2a2a;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-start {
+            border-color: #4a7c59;
+            color: #4a7c59;
+        }
+        
+        .btn-start:hover {
+            background: #4a7c59;
+            color: #fff;
+        }
+        
+        .btn-stop {
+            border-color: #8b5a5a;
+            color: #8b5a5a;
+        }
+        
+        .btn-stop:hover {
+            background: #8b5a5a;
+            color: #fff;
+        }
+        
+        .btn-reset {
+            border-color: #666;
+            color: #666;
+        }
+        
+        .btn-reset:hover {
+            background: #666;
+            color: #fff;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 35px;
+            background: #fff;
+            margin-top: 40px;
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.04),
+                0 1px 2px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .status-main {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 400;
+            font-style: italic;
+            color: #2a2a2a;
+            letter-spacing: -0.5px;
+        }
+        
+        .progress-container {
+            margin: 30px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e8e8e8;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2a2a2a 0%, #4a4a4a 100%);
+            transition: width 0.1s linear;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 2px;
+            height: 100%;
+            background: #2a2a2a;
+            box-shadow: 0 0 8px rgba(42, 42, 42, 0.3);
+        }
+        
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #999;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 15px;
+            }
+            
+            .title {
+                font-size: 42px;
+            }
+            
+            .content-section {
+                padding: 30px 25px;
+            }
+            
+            .controls-row {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+            
+            .buttons-row {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1 class="title">Vibey Looper</h1>
+            <p class="subtitle">Practice Perfect</p>
+        </div>
+        
+        <div class="content-section">
+            <div class="input-group">
+                <label>Search for a song</label>
+                <input type="text" placeholder="Type song name or artist...">
+            </div>
+        </div>
+        
+        <div class="content-section">
+            <div class="input-group">
+                <label>URL or Video ID of song from YouTube</label>
+                <input type="text" placeholder="Enter URL or Video ID">
+            </div>
+        </div>
+        
+        <div class="video-container">
+            <div class="video-placeholder">YouTube Video Player</div>
+        </div>
+        
+        <div class="content-section">
+            <div class="controls-row">
+                <div class="input-group">
+                    <label>Start Time (MM:SS)</label>
+                    <input type="text" placeholder="0:00">
+                </div>
+                <div class="input-group">
+                    <label>End Time (MM:SS)</label>
+                    <input type="text" placeholder="0:10">
+                </div>
+                <div class="input-group">
+                    <label>Target Loops</label>
+                    <input type="text" placeholder="5">
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>Playback Speed</label>
+                <select>
+                    <option>1x (Normal)</option>
+                    <option>0.5x (Slow)</option>
+                    <option>1.5x (Fast)</option>
+                    <option>2x (Very Fast)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 45%"></div>
+            </div>
+            <div class="progress-labels">
+                <span>0:00</span>
+                <span>0:05</span>
+                <span>0:10</span>
+            </div>
+        </div>
+        
+        <div class="buttons-row">
+            <button class="btn btn-start">Start Loop</button>
+            <button class="btn btn-stop">Stop</button>
+            <button class="btn btn-reset">Reset</button>
+        </div>
+        
+        <div class="status">
+            <div class="status-main">Loop 2 / 5</div>
+            <div style="margin-top: 15px; font-size: 13px; font-weight: 300; letter-spacing: 1px; color: #999;">Current: 0:05</div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+

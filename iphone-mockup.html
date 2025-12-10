@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iPhone Mockup - Optimized Header</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto+Condensed:wght@400;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto Condensed', sans-serif;
+      background: #0a0a0a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .phone-frame {
+      width: 375px;
+      max-width: 100%;
+      background: #000;
+      border: 8px solid #1a1a1a;
+      border-radius: 25px;
+      padding: 10px;
+      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
+    }
+
+    .phone-screen {
+      background: #0a0a0a;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .status-bar {
+      height: 44px;
+      background: #000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .app {
+      max-width: 800px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 12px;
+      background: #1a1a1a;
+      border: 3px solid #fff;
+      box-shadow: 
+        0 0 0 1px #000,
+        4px 4px 0px #fff,
+        8px 8px 0px #333;
+      position: relative;
+    }
+
+    .title-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+
+    .title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0;
+      text-shadow: 
+        2px 2px 0px rgba(200, 50, 50, 0.6),
+        4px 4px 0px #000;
+      transform: rotate(-1deg);
+      position: relative;
+    }
+
+    .title-byline {
+      font-size: 12px;
+      font-style: italic;
+      color: #ccc;
+      font-family: 'Roboto Condensed', sans-serif;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      align-self: flex-end;
+      margin-bottom: 2px;
+    }
+
+    .help-link {
+      width: 30px;
+      height: 30px;
+      border-radius: 0;
+      border: 2px solid #fff;
+      background: rgba(200, 50, 50, 0.8);
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 2px 2px 0px #000;
+      font-family: 'Oswald', sans-serif;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #ccc;
+      text-align: center;
+      margin-top: -4px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 400;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .input-group label {
+      color: #fff;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      font-family: 'Oswald', sans-serif;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #000;
+      border: 2px solid #fff;
+      color: #fff;
+      font-size: 14px;
+      font-family: 'Roboto Condensed', sans-serif;
+      box-shadow: 2px 2px 0px #666;
+      border-radius: 0;
+    }
+
+    .video-container {
+      width: 100%;
+      background: #000;
+      border: 3px solid #fff;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      margin: 0 auto 20px;
+      box-shadow: 4px 4px 0px #666;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .video-placeholder {
+      color: #666;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .controls-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .speed-control-row {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin-top: -15px;
+      margin-bottom: 20px;
+    }
+
+    .speed-select {
+      width: 100%;
+      padding: 12px 14px;
+      background: #000;
+      border: 2px solid #fff;
+      color: #fff;
+      font-size: 14px;
+      font-family: 'Roboto Condensed', sans-serif;
+      box-shadow: 2px 2px 0px #666;
+      border-radius: 0;
+    }
+
+    .buttons-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      margin-top: -25px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      border: 3px solid #fff;
+      background: #000;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      box-shadow: 4px 4px 0px #666;
+      font-family: 'Oswald', sans-serif;
+      width: 100%;
+      border-radius: 0;
+    }
+
+    .btn-start {
+      background: #000;
+      border-color: #fff;
+      box-shadow: 4px 4px 0px #666;
+    }
+
+    .btn-stop {
+      background: #000;
+      border-color: #ff3333;
+      color: #ff3333;
+      box-shadow: 4px 4px 0px #ff3333;
+    }
+
+    .btn-reset {
+      background: #000;
+      border-color: #fff;
+      box-shadow: 4px 4px 0px #666;
+    }
+
+    .status {
+      text-align: center;
+      padding: 16px 20px;
+      background: #000;
+      border: 3px solid #fff;
+      box-shadow: 4px 4px 0px #666;
+      width: 100%;
+      border-radius: 0;
+    }
+
+    .status-main {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-family: 'Oswald', sans-serif;
+      text-shadow: 2px 2px 0px rgba(200, 50, 50, 0.6);
+    }
+
+    .comparison-note {
+      margin-top: 20px;
+      padding: 15px;
+      background: #1a1a1a;
+      border: 2px solid #666;
+      color: #ccc;
+      font-size: 12px;
+      text-align: center;
+      border-radius: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <div class="status-bar">
+        <span>8:37</span>
+        <span>61%</span>
+      </div>
+      
+      <div class="app">
+        <div class="title-section">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
+            <h1 class="title">Music Looper</h1>
+            <span class="title-byline">by Vibey Craft</span>
+          </div>
+          <button class="help-link">?</button>
+        </div>
+        <p class="subtitle">Loop sections of songs</p>
+        
+        <div class="input-group">
+          <label>URL or Video ID of song from YouTube</label>
+          <input type="text" value="https://www.youtube.com/watch?v=u7p8b..." placeholder="Enter URL or Video ID of song from YouTube">
+        </div>
+
+        <div class="video-container">
+          <div class="video-placeholder">VIDEO PLAYER</div>
+        </div>
+
+        <div class="controls-row">
+          <div class="input-group">
+            <label>Start Time (MM:SS)</label>
+            <input type="text" value="0:00">
+          </div>
+          <div class="input-group">
+            <label>End Time (MM:SS)</label>
+            <input type="text" value="0:10">
+          </div>
+          <div class="input-group">
+            <label>Target Loops</label>
+            <input type="number" value="5">
+          </div>
+        </div>
+
+        <div class="speed-control-row">
+          <div class="input-group">
+            <label>Playback Speed</label>
+            <select class="speed-select">
+              <option>1x (Normal)</option>
+              <option>0.5x</option>
+              <option>1.5x</option>
+              <option>2x (Fast)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="buttons-row">
+          <button class="btn btn-start">Start Loop</button>
+          <button class="btn btn-stop">Stop</button>
+          <button class="btn btn-reset">Reset</button>
+        </div>
+
+        <div class="status">
+          <div class="status-main">
+            Loop 0 / 5 (0%)
+          </div>
+        </div>
+
+        <div class="comparison-note">
+          <strong>Optimized iPhone Layout:</strong><br>
+          Reduced header space by ~90px<br>
+          Title: 22px (was 28px)<br>
+          Subtitle: 12px (was 16px)<br>
+          Byline: 12px (was 18px)<br>
+          Reduced padding & gaps
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

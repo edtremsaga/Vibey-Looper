@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibey Looper - Talking Heads Inspired Mockup</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: #f0ede8;
+            color: #2a2a2a;
+            min-height: 100vh;
+            padding: 30px;
+            position: relative;
+        }
+        
+        /* Abstract geometric patterns */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(45deg, transparent, transparent 50px, rgba(200, 50, 50, 0.02) 50px, rgba(200, 50, 50, 0.02) 100px),
+                repeating-linear-gradient(-45deg, transparent, transparent 50px, rgba(50, 100, 200, 0.02) 50px, rgba(50, 100, 200, 0.02) 100px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .app {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            background: #fff;
+            border: 3px solid #2a2a2a;
+            padding: 50px;
+            box-shadow: 
+                8px 8px 0 #d4a574,
+                16px 16px 0 #2a2a2a;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #d4a574;
+            position: relative;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 20%;
+            right: 20%;
+            height: 4px;
+            background: #c83232;
+        }
+        
+        .title {
+            font-family: 'IBM Plex Serif', serif;
+            font-size: 68px;
+            font-weight: 600;
+            font-style: italic;
+            margin: 20px 0;
+            color: #2a2a2a;
+            position: relative;
+            line-height: 1.1;
+            transform: rotate(-0.5deg);
+        }
+        
+        .title::before {
+            content: 'VIBEY';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            color: #d4a574;
+            z-index: -1;
+            transform: rotate(1deg);
+        }
+        
+        .title::after {
+            content: 'LOOPER';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            color: #c83232;
+            z-index: -2;
+            transform: rotate(-1deg);
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 20px;
+            color: #666;
+        }
+        
+        .content-section {
+            margin-bottom: 35px;
+            border: 2px dashed #d4a574;
+            padding: 35px;
+            background: #faf9f7;
+            position: relative;
+        }
+        
+        .content-section::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 1px solid #c83232;
+            pointer-events: none;
+        }
+        
+        .input-group {
+            margin-bottom: 28px;
+        }
+        
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            color: #c83232;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+        
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 14px 16px;
+            background: #fff;
+            border: 2px solid #2a2a2a;
+            color: #2a2a2a;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 400;
+            transition: all 0.3s ease;
+        }
+        
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #c83232;
+            background: #fff;
+            box-shadow: 
+                4px 4px 0 #d4a574,
+                8px 8px 0 #2a2a2a;
+            transform: translate(-2px, -2px);
+        }
+        
+        .input-group input::placeholder {
+            color: #999;
+            font-style: italic;
+        }
+        
+        .controls-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 28px;
+        }
+        
+        .video-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border: 4px solid #2a2a2a;
+            margin: 40px 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                6px 6px 0 #d4a574,
+                12px 12px 0 #2a2a2a;
+        }
+        
+        .video-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(212, 165, 116, 0.1) 20px, rgba(212, 165, 116, 0.1) 40px),
+                repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(200, 50, 50, 0.1) 20px, rgba(200, 50, 50, 0.1) 40px);
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .video-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            color: rgba(212, 165, 116, 0.3);
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .buttons-row {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 16px 32px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: #fff;
+            border: 3px solid #2a2a2a;
+            color: #2a2a2a;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 4px 4px 0 #d4a574;
+            min-width: 150px;
+            position: relative;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border: 1px solid #c83232;
+            z-index: -1;
+        }
+        
+        .btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #d4a574, 10px 10px 0 #2a2a2a;
+        }
+        
+        .btn:active {
+            transform: translate(0, 0);
+            box-shadow: 2px 2px 0 #d4a574;
+        }
+        
+        .btn-start {
+            border-color: #4a7c59;
+            color: #4a7c59;
+            box-shadow: 4px 4px 0 #4a7c59;
+        }
+        
+        .btn-start::before {
+            border-color: #4a7c59;
+        }
+        
+        .btn-start:hover {
+            box-shadow: 6px 6px 0 #4a7c59, 10px 10px 0 #2a2a2a;
+        }
+        
+        .btn-stop {
+            border-color: #c83232;
+            color: #c83232;
+            box-shadow: 4px 4px 0 #c83232;
+        }
+        
+        .btn-stop::before {
+            border-color: #c83232;
+        }
+        
+        .btn-stop:hover {
+            box-shadow: 6px 6px 0 #c83232, 10px 10px 0 #2a2a2a;
+        }
+        
+        .btn-reset {
+            border-color: #2a2a2a;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 40px;
+            background: #faf9f7;
+            border: 3px solid #2a2a2a;
+            margin-top: 40px;
+            box-shadow: 6px 6px 0 #d4a574;
+            position: relative;
+        }
+        
+        .status::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border: 2px dashed #c83232;
+            z-index: -1;
+        }
+        
+        .status-main {
+            font-family: 'IBM Plex Serif', serif;
+            font-size: 44px;
+            font-weight: 600;
+            font-style: italic;
+            color: #2a2a2a;
+            line-height: 1.2;
+            transform: rotate(-0.5deg);
+        }
+        
+        .progress-container {
+            margin: 30px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0ede8;
+            border: 3px solid #2a2a2a;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 3px 3px 0 #d4a574;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #c83232 0%, #d4a574 100%);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+            transition: width 0.1s linear;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 15px,
+                rgba(255, 255, 255, 0.2) 15px,
+                rgba(255, 255, 255, 0.2) 30px
+            );
+        }
+        
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .app {
+                padding: 30px 20px;
+            }
+            
+            .title {
+                font-size: 48px;
+            }
+            
+            .content-section {
+                padding: 25px 20px;
+            }
+            
+            .controls-row {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .buttons-row {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1 class="title">Vibey Looper</h1>
+            <p class="subtitle">Practice Perfect</p>
+        </div>
+        
+        <div class="content-section">
+            <div class="input-group">
+                <label>Search for a song</label>
+                <input type="text" placeholder="Type song name or artist...">
+            </div>
+        </div>
+        
+        <div class="content-section">
+            <div class="input-group">
+                <label>URL or Video ID of song from YouTube</label>
+                <input type="text" placeholder="Enter URL or Video ID">
+            </div>
+        </div>
+        
+        <div class="video-container">
+            <div class="video-placeholder">YouTube Video Player</div>
+        </div>
+        
+        <div class="content-section">
+            <div class="controls-row">
+                <div class="input-group">
+                    <label>Start Time (MM:SS)</label>
+                    <input type="text" placeholder="0:00">
+                </div>
+                <div class="input-group">
+                    <label>End Time (MM:SS)</label>
+                    <input type="text" placeholder="0:10">
+                </div>
+                <div class="input-group">
+                    <label>Target Loops</label>
+                    <input type="text" placeholder="5">
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>Playback Speed</label>
+                <select>
+                    <option>1x (Normal)</option>
+                    <option>0.5x (Slow)</option>
+                    <option>1.5x (Fast)</option>
+                    <option>2x (Very Fast)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 45%"></div>
+            </div>
+            <div class="progress-labels">
+                <span>0:00</span>
+                <span>0:05</span>
+                <span>0:10</span>
+            </div>
+        </div>
+        
+        <div class="buttons-row">
+            <button class="btn btn-start">Start Loop</button>
+            <button class="btn btn-stop">Stop</button>
+            <button class="btn btn-reset">Reset</button>
+        </div>
+        
+        <div class="status">
+            <div class="status-main">Loop 2 / 5</div>
+            <div style="margin-top: 15px; font-size: 14px; font-weight: 400; color: #666; letter-spacing: 1px; text-transform: uppercase;">Current: 0:05</div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+

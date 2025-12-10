@@ -126,3 +126,7 @@ After comparing your current app design with the Rancid-inspired mockup, here ar
 - **Accent:** `#ff0000` (bright red)
 - **Text:** `#fff` (white)
 - **Shadows:** Red layer + black layer for depth
+
+
+
+

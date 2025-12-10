@@ -92,3 +92,7 @@ Each mockup includes responsive breakpoints for mobile devices.
 ## Notes
 
 These are static mockups showing the visual design. They don't include the actual YouTube player functionality - that will be integrated when we implement the chosen design into your React codebase.
+
+
+
+

@@ -74,3 +74,7 @@
 - Use `window.innerWidth <= 768` or CSS media queries to detect mobile
 - Conditionally render different help content based on device type
 - Consider hiding keyboard shortcuts section on mobile devices
+
+
+
+

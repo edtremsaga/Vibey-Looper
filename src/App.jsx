@@ -1,125 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import './App.css'
-
-// Helper functions
-const secondsToMMSS = (seconds) => {
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
-const mmssToSeconds = (input) => {
-  if (!input || input.trim() === '') return 0
-  
-  // Handle plain number (seconds)
-  if (/^\d+$/.test(input.trim())) {
-    return parseFloat(input.trim())
-  }
-  
-  // Handle MM:SS format
-  const parts = input.trim().split(':')
-  if (parts.length === 2) {
-    const minutes = parseInt(parts[0]) || 0
-    const seconds = parseFloat(parts[1]) || 0
-    return minutes * 60 + seconds
-  }
-  
-  // Fallback to parsing as seconds
-  return parseFloat(input) || 0
-}
-
-const extractVideoId = (input) => {
-  if (!input) return ''
-  
-  // If it's already just an ID (11 characters, alphanumeric)
-  if (/^[a-zA-Z0-9_-]{11}$/.test(input.trim())) {
-    return input.trim()
-  }
-  
-  // Try to extract from various YouTube URL formats
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/.*[?&]v=([a-zA-Z0-9_-]{11})/,
-  ]
-  
-  for (const pattern of patterns) {
-    const match = input.match(pattern)
-    if (match) return match[1]
-  }
-  
-  return input.trim()
-}
-
-// Helper function to save recent video to localStorage
-const saveRecentVideo = (videoId, title = '', author = '', thumbnail = '') => {
-  try {
-    const recent = JSON.parse(localStorage.getItem('recentVideos') || '[]')
-    const newRecent = [
-      { videoId, title, author, thumbnail, timestamp: Date.now() },
-      ...recent.filter(v => v.videoId !== videoId)
-    ].slice(0, 10) // Keep last 10
-    localStorage.setItem('recentVideos', JSON.stringify(newRecent))
-    return newRecent
-  } catch (error) {
-    console.warn('Failed to save recent video:', error)
-    return []
-  }
-}
-
-// Helper function to load recent videos from localStorage
-const loadRecentVideos = () => {
-  try {
-    return JSON.parse(localStorage.getItem('recentVideos') || '[]')
-  } catch (error) {
-    console.warn('Failed to load recent videos:', error)
-    return []
-  }
-}
+import { secondsToMMSS, mmssToSeconds, extractVideoId, getYouTubeErrorMessage } from './utils/helpers.js'
+import { saveRecentVideo, loadRecentVideos, saveDefaultVideo, loadDefaultVideo, clearDefaultVideo } from './utils/storage.js'
 
 // App default video (fallback)
 const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
-
-// Helper function to save user's default video to localStorage
-const saveDefaultVideo = (videoId, title = '', author = '', thumbnail = '') => {
-  try {
-    const defaultVideo = {
-      videoId: extractVideoId(videoId),
-      url: videoId,
-      title,
-      author,
-      thumbnail,
-      timestamp: Date.now()
-    }
-    localStorage.setItem('defaultVideo', JSON.stringify(defaultVideo))
-    return defaultVideo
-  } catch (error) {
-    console.warn('Failed to save default video:', error)
-    return null
-  }
-}
-
-// Helper function to load user's default video from localStorage
-const loadDefaultVideo = () => {
-  try {
-    const stored = localStorage.getItem('defaultVideo')
-    if (stored) {
-      return JSON.parse(stored)
-    }
-    return null
-  } catch (error) {
-    console.warn('Failed to load default video:', error)
-    return null
-  }
-}
-
-// Helper function to clear user's default video (reset to app default)
-const clearDefaultVideo = () => {
-  try {
-    localStorage.removeItem('defaultVideo')
-  } catch (error) {
-    console.warn('Failed to clear default video:', error)
-  }
-}
 
 // Helper function to fetch video title from YouTube oEmbed API (free, no API key needed)
 const fetchVideoTitle = async (videoId) => {
@@ -138,23 +23,6 @@ const fetchVideoTitle = async (videoId) => {
   } catch (error) {
     console.warn('Failed to fetch video title:', error)
     return null
-  }
-}
-
-// Helper function to get better error message from YouTube error code
-const getYouTubeErrorMessage = (errorCode) => {
-  switch (errorCode) {
-    case 2:
-      return 'Invalid video ID. Please check the URL or Video ID.'
-    case 5:
-      return 'The HTML5 player cannot be found. Please refresh the page.'
-    case 100:
-      return 'Video not found. It may have been removed or made private.'
-    case 101:
-    case 150:
-      return 'Video is not available for embedding. It may be private or restricted.'
-    default:
-      return 'Failed to load video. Please check the URL or Video ID and try again.'
   }
 }
 
@@ -1018,7 +886,11 @@ function App() {
           <div className="help-modal" onClick={(e) => e.stopPropagation()}>
             <div className="help-modal-header">
               <h2>How to Use</h2>
-              <button className="help-close" onClick={() => setShowHelp(false)}>
+              <button 
+                className="help-close" 
+                onClick={() => setShowHelp(false)}
+                aria-label="Close help dialog"
+              >
                 ×
               </button>
             </div>
@@ -1128,6 +1000,7 @@ function App() {
                   className={isDefaultVideo ? "btn-default-toggle active" : "btn-default-toggle"}
                   onClick={isDefaultVideo ? handleClearDefault : handleSetAsDefault}
                   title={isDefaultVideo ? "Remove as default video" : "Set this video as your default"}
+                  aria-label={isDefaultVideo ? "Remove as default video" : "Set this video as your default"}
                 >
                   ★
                 </button>
@@ -1139,11 +1012,19 @@ function App() {
                   type="button"
                   className="recent-videos-toggle"
                   onClick={() => setShowRecentVideos(!showRecentVideos)}
+                  aria-expanded={showRecentVideos}
+                  aria-haspopup="true"
+                  aria-controls="recent-videos-menu"
                 >
                   📋 Recent ({recentVideos.length})
                 </button>
               {showRecentVideos && (
-                <div className="recent-videos-dropdown">
+                <div 
+                  id="recent-videos-menu"
+                  className="recent-videos-dropdown"
+                  role="menu"
+                  aria-label="Recent videos"
+                >
                   {recentVideos.map((video, index) => {
                     const isDefault = userDefaultVideo && userDefaultVideo.videoId === video.videoId
                     return (
@@ -1152,6 +1033,7 @@ function App() {
                       type="button"
                       className={`recent-video-item ${isDefault ? 'is-default' : ''}`}
                       onClick={() => handleRecentVideoSelect(video)}
+                      role="menuitem"
                     >
                       {video.thumbnail && (
                         <img 
