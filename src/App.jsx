@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import './App.css'
-import { secondsToMMSS, mmssToSeconds, extractVideoId, getYouTubeErrorMessage } from './utils/helpers.js'
+import { secondsToMMSS, mmssToSeconds, normalizeMMSS, extractVideoId, getYouTubeErrorMessage } from './utils/helpers.js'
 import { saveRecentVideo, loadRecentVideos, saveDefaultVideo, loadDefaultVideo, clearDefaultVideo, saveSavedLoop, loadSavedLoops, deleteSavedLoop } from './utils/storage.js'
 
 // App default video (fallback)
@@ -1345,6 +1345,15 @@ function App() {
               const seconds = mmssToSeconds(displayValue)
               setStartTime(seconds)
             }}
+            onBlur={(e) => {
+              // Normalize MM:SS format on blur (e.g., "0:75" → "1:15")
+              const normalized = normalizeMMSS(e.target.value)
+              if (normalized !== e.target.value) {
+                setStartTimeDisplay(normalized)
+                const seconds = mmssToSeconds(normalized)
+                setStartTime(seconds)
+              }
+            }}
             placeholder="0:00"
             disabled={isPlaying}
           />
@@ -1361,6 +1370,15 @@ function App() {
               setEndTimeDisplay(displayValue)
               const seconds = mmssToSeconds(displayValue)
               setEndTime(seconds)
+            }}
+            onBlur={(e) => {
+              // Normalize MM:SS format on blur (e.g., "0:75" → "1:15")
+              const normalized = normalizeMMSS(e.target.value)
+              if (normalized !== e.target.value) {
+                setEndTimeDisplay(normalized)
+                const seconds = mmssToSeconds(normalized)
+                setEndTime(seconds)
+              }
             }}
             placeholder="0:00"
             disabled={isPlaying}

@@ -7,6 +7,41 @@ export const secondsToMMSS = (seconds) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
+// Normalize MM:SS format - converts invalid seconds (>59) to valid MM:SS
+// Example: "0:75" → "1:15", "2:90" → "3:30"
+export const normalizeMMSS = (input) => {
+  if (!input || input.trim() === '') return input
+  
+  const trimmed = input.trim()
+  
+  // Only normalize if it's in MM:SS format (has a colon)
+  const parts = trimmed.split(':')
+  if (parts.length !== 2) {
+    // Not MM:SS format, return as-is
+    return input
+  }
+  
+  const minutesStr = parts[0].trim()
+  const secondsStr = parts[1].trim()
+  
+  // Parse minutes and seconds
+  const minutes = parseInt(minutesStr) || 0
+  const seconds = parseFloat(secondsStr) || 0
+  
+  // If seconds are already valid (0-59), no normalization needed
+  if (seconds >= 0 && seconds < 60) {
+    return input
+  }
+  
+  // Normalize: convert excess seconds to minutes
+  const totalSeconds = minutes * 60 + seconds
+  const normalizedMinutes = Math.floor(totalSeconds / 60)
+  const normalizedSeconds = Math.floor(totalSeconds % 60)
+  
+  // Return normalized MM:SS format
+  return `${normalizedMinutes}:${normalizedSeconds.toString().padStart(2, '0')}`
+}
+
 // Convert MM:SS format or plain number to seconds
 // Security: Validates and limits input to prevent DoS attacks via extremely large values
 export const mmssToSeconds = (input) => {
