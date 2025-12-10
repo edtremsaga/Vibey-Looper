@@ -218,3 +218,181 @@ export const clearDefaultVideo = () => {
   }
 }
 
+// Security: Validate saved loop data structure to prevent data poisoning
+const validateSavedLoop = (loop) => {
+  // Basic structure check
+  if (!loop || typeof loop !== 'object') {
+    return null
+  }
+  
+  // Video ID is required and must be valid (11 characters, alphanumeric)
+  if (!loop.videoId || typeof loop.videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(loop.videoId)) {
+    return null
+  }
+  
+  // URL is required
+  if (!loop.url || typeof loop.url !== 'string' || loop.url.trim() === '') {
+    return null
+  }
+  
+  // Start time: must be number, 0-86400 (24 hours max)
+  const startTime = typeof loop.startTime === 'number' && loop.startTime >= 0 && loop.startTime <= 86400
+    ? loop.startTime
+    : null
+  if (startTime === null) return null
+  
+  // End time: must be number, 0-86400, and > startTime
+  const endTime = typeof loop.endTime === 'number' && loop.endTime > startTime && loop.endTime <= 86400
+    ? loop.endTime
+    : null
+  if (endTime === null) return null
+  
+  // Target loops: must be number, 1-10000
+  const targetLoops = typeof loop.targetLoops === 'number' && loop.targetLoops >= 1 && loop.targetLoops <= 10000
+    ? loop.targetLoops
+    : null
+  if (targetLoops === null) return null
+  
+  // Return validated and sanitized saved loop object
+  return {
+    id: typeof loop.id === 'string' && loop.id.length > 0
+      ? loop.id.substring(0, 100) // Unique ID
+      : `${loop.videoId}-${Date.now()}`, // Generate ID if missing
+    videoId: loop.videoId, // Already validated above
+    url: loop.url.trim().substring(0, 500), // Sanitize URL length
+    startTime, // Already validated above
+    endTime, // Already validated above
+    targetLoops, // Already validated above
+    playbackSpeed: typeof loop.playbackSpeed === 'number' && loop.playbackSpeed >= 0.25 && loop.playbackSpeed <= 2.0
+      ? loop.playbackSpeed
+      : 1, // Default to 1x if invalid
+    title: typeof loop.title === 'string' && loop.title.length > 0
+      ? loop.title.substring(0, 200) // Truncate to 200 chars
+      : '',
+    author: typeof loop.author === 'string' && loop.author.length > 0
+      ? loop.author.substring(0, 100) // Truncate to 100 chars
+      : '',
+    thumbnail: typeof loop.thumbnail === 'string' && 
+               loop.thumbnail.length > 0 &&
+               loop.thumbnail.startsWith('https://')
+      ? loop.thumbnail.substring(0, 500) // Truncate to 500 chars
+      : '',
+    timestamp: typeof loop.timestamp === 'number' && loop.timestamp > 0
+      ? loop.timestamp
+      : Date.now() // Default to current time if invalid
+  }
+}
+
+// Helper function to save a loop configuration to localStorage
+// Security: Validates inputs before saving to prevent invalid data storage
+export const saveSavedLoop = (videoId, startTime, endTime, targetLoops, playbackSpeed = 1, title = '', author = '', thumbnail = '') => {
+  try {
+    // Validate videoId
+    const extractedId = extractVideoId(videoId)
+    if (!extractedId || extractedId.length !== 11) {
+      console.warn('Invalid videoId provided to saveSavedLoop:', videoId)
+      return null
+    }
+    
+    // Validate URL
+    if (!videoId || typeof videoId !== 'string' || videoId.trim() === '') {
+      console.warn('Invalid URL provided to saveSavedLoop')
+      return null
+    }
+    
+    // Validate times
+    if (typeof startTime !== 'number' || startTime < 0 || startTime > 86400) {
+      console.warn('Invalid startTime provided to saveSavedLoop:', startTime)
+      return null
+    }
+    
+    if (typeof endTime !== 'number' || endTime <= startTime || endTime > 86400) {
+      console.warn('Invalid endTime provided to saveSavedLoop:', endTime)
+      return null
+    }
+    
+    // Validate target loops
+    if (typeof targetLoops !== 'number' || targetLoops < 1 || targetLoops > 10000) {
+      console.warn('Invalid targetLoops provided to saveSavedLoop:', targetLoops)
+      return null
+    }
+    
+    // Validate playback speed
+    if (typeof playbackSpeed !== 'number' || playbackSpeed < 0.25 || playbackSpeed > 2.0) {
+      playbackSpeed = 1 // Default to 1x if invalid
+    }
+    
+    // Create saved loop object
+    const savedLoop = {
+      id: `${extractedId}-${Date.now()}`, // Unique ID
+      videoId: extractedId,
+      url: videoId.trim().substring(0, 500),
+      startTime,
+      endTime,
+      targetLoops,
+      playbackSpeed,
+      title: typeof title === 'string' ? title.substring(0, 200) : '',
+      author: typeof author === 'string' ? author.substring(0, 100) : '',
+      thumbnail: typeof thumbnail === 'string' && thumbnail.startsWith('https://')
+        ? thumbnail.substring(0, 500)
+        : '',
+      timestamp: Date.now()
+    }
+    
+    // Load existing saved loops
+    const savedLoops = JSON.parse(localStorage.getItem('savedLoops') || '[]')
+    
+    // Add new loop to the beginning (most recent first)
+    const newSavedLoops = [savedLoop, ...savedLoops].slice(0, 100) // Keep max 100 saved loops
+    
+    localStorage.setItem('savedLoops', JSON.stringify(newSavedLoops))
+    return savedLoop
+  } catch (error) {
+    console.warn('Failed to save loop:', error)
+    return null
+  }
+}
+
+// Helper function to load saved loops from localStorage
+// Security: Validates and sanitizes data to prevent data poisoning attacks
+export const loadSavedLoops = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem('savedLoops') || '[]')
+    
+    // Validate that data is an array
+    if (!Array.isArray(data)) {
+      console.warn('Invalid saved loops data structure, resetting to empty array')
+      return []
+    }
+    
+    // Validate and filter out invalid entries
+    const validated = data
+      .map(validateSavedLoop)
+      .filter(loop => loop !== null) // Remove invalid entries
+      .slice(0, 100) // Enforce maximum limit
+    
+    // Log if entries were filtered out (for debugging)
+    if (validated.length < data.length) {
+      console.warn(`Filtered out ${data.length - validated.length} invalid saved loop entries`)
+    }
+    
+    return validated
+  } catch (error) {
+    console.warn('Failed to load saved loops:', error)
+    return []
+  }
+}
+
+// Helper function to delete a saved loop by ID
+export const deleteSavedLoop = (loopId) => {
+  try {
+    const savedLoops = JSON.parse(localStorage.getItem('savedLoops') || '[]')
+    const filtered = savedLoops.filter(loop => loop.id !== loopId)
+    localStorage.setItem('savedLoops', JSON.stringify(filtered))
+    return filtered
+  } catch (error) {
+    console.warn('Failed to delete saved loop:', error)
+    return loadSavedLoops() // Return current valid state on error
+  }
+}
+

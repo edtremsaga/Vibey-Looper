@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import './App.css'
 import { secondsToMMSS, mmssToSeconds, extractVideoId, getYouTubeErrorMessage } from './utils/helpers.js'
-import { saveRecentVideo, loadRecentVideos, saveDefaultVideo, loadDefaultVideo, clearDefaultVideo } from './utils/storage.js'
+import { saveRecentVideo, loadRecentVideos, saveDefaultVideo, loadDefaultVideo, clearDefaultVideo, saveSavedLoop, loadSavedLoops, deleteSavedLoop } from './utils/storage.js'
 
 // App default video (fallback)
 const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
@@ -113,6 +113,8 @@ function App() {
   const [videoAuthor, setVideoAuthor] = useState('')
   const [recentVideos, setRecentVideos] = useState([])
   const [showRecentVideos, setShowRecentVideos] = useState(false)
+  const [savedLoops, setSavedLoops] = useState([])
+  const [showSavedLoops, setShowSavedLoops] = useState(false)
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -171,6 +173,11 @@ function App() {
   // Load recent videos on mount
   useEffect(() => {
     setRecentVideos(loadRecentVideos())
+  }, [])
+
+  // Load saved loops on mount
+  useEffect(() => {
+    setSavedLoops(loadSavedLoops())
   }, [])
 
   // Load user's default video on mount
@@ -277,6 +284,20 @@ function App() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showRecentVideos])
+
+  // Close saved loops dropdown when clicking outside
+  useEffect(() => {
+    if (!showSavedLoops) return
+
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.saved-loops-wrapper')) {
+        setShowSavedLoops(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showSavedLoops])
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -429,6 +450,7 @@ function App() {
   }, [apiReady, playbackSpeed, videoId])
 
   // Load new video when videoId changes (but player already exists)
+  // RESTORED TO EXACT PRODUCTION CODE (commit 5a927af) - this works perfectly for recent videos
   useEffect(() => {
     if (!player || !player.loadVideoById || videoId === currentVideoIdRef.current) return
     
@@ -481,15 +503,7 @@ function App() {
         setValidationError('Error loading video. Please check the URL or Video ID and try again.')
       }
     }
-    
-    // Cleanup function
-    return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current)
-        loadingTimeoutRef.current = null
-      }
-    }
-  }, [videoId, player])
+  }, [apiReady, playbackSpeed, videoId])
 
   // Get video duration when player is ready and video is loaded
   useEffect(() => {
@@ -867,6 +881,88 @@ function App() {
     setIsDefaultVideo(false)
   }, [videoId, userDefaultVideo])
 
+  // Handler to save current loop configuration
+  const handleSaveLoop = useCallback(() => {
+    const extractedId = extractVideoId(videoId)
+    if (!extractedId || extractedId.length !== 11) {
+      setValidationError('Invalid video. Please load a valid YouTube video first.')
+      return
+    }
+
+    if (endTime <= startTime) {
+      setValidationError('End time must be greater than start time.')
+      return
+    }
+
+    // Get video info (use current state or fetch if needed)
+    const videoInfo = {
+      title: videoTitle || `Video ${extractedId}`,
+      author: videoAuthor || '',
+      thumbnail: videoThumbnail || ''
+    }
+
+    // Save the loop
+    const saved = saveSavedLoop(
+      videoId,
+      startTime,
+      endTime,
+      targetLoops,
+      playbackSpeed,
+      videoInfo.title,
+      videoInfo.author,
+      videoInfo.thumbnail
+    )
+
+    if (saved) {
+      // Reload saved loops to update UI
+      setSavedLoops(loadSavedLoops())
+      setValidationError('') // Clear any errors
+      // Could show a success message here
+    } else {
+      setValidationError('Failed to save loop. Please try again.')
+    }
+  }, [videoId, startTime, endTime, targetLoops, playbackSpeed, videoTitle, videoAuthor, videoThumbnail])
+
+  // Handler to load a saved loop
+  // Works exactly like handleRecentVideoSelect - just changes videoId and lets normal flow handle it
+  const handleLoadSavedLoop = useCallback((savedLoop) => {
+    // Reset loop counter
+    setCurrentLoops(0)
+    hasLoopedRef.current = false
+    
+    // Set video (only if it's different from current video)
+    // This works exactly like recent videos - just change videoId and let useEffect handle loading
+    const currentVideoId = extractVideoId(videoId)
+    const savedVideoId = extractVideoId(savedLoop.url)
+    if (currentVideoId !== savedVideoId) {
+      setVideoId(savedLoop.url)
+      // Video loading will be handled by the useEffect watching videoId
+    }
+    
+    // Set times (convert to display format)
+    setStartTime(savedLoop.startTime)
+    setStartTimeDisplay(secondsToMMSS(savedLoop.startTime))
+    setEndTime(savedLoop.endTime)
+    setEndTimeDisplay(secondsToMMSS(savedLoop.endTime))
+    
+    // Set target loops
+    setTargetLoops(savedLoop.targetLoops)
+    setTargetLoopsDisplay(savedLoop.targetLoops.toString())
+    
+    // Set playback speed
+    setPlaybackSpeed(savedLoop.playbackSpeed || 1)
+    
+    // Close dropdown
+    setShowSavedLoops(false)
+    
+    // Clear any errors
+    setValidationError('')
+    
+    // Note: Video continues playing if it was playing (same video)
+    // New video loads but doesn't auto-play (different video)
+    // User must click "Start Loop" button to begin looping with new settings
+  }, [videoId])
+
   const handleYouTubeSearch = useCallback(() => {
     if (searchQuery.trim()) {
       const encodedQuery = encodeURIComponent(searchQuery.trim())
@@ -1084,6 +1180,71 @@ function App() {
                 </button>
               )}
             </div>
+            {player && endTime > startTime && (
+              <div className="saved-loops-controls">
+                <button
+                  type="button"
+                  className="btn-save-loop"
+                  onClick={handleSaveLoop}
+                  title="Save current loop configuration (start time, end time, target loops)"
+                  aria-label="Save current loop configuration"
+                >
+                  💾 Save Loop
+                </button>
+              </div>
+            )}
+            {savedLoops.length > 0 && (
+              <div className="saved-loops-wrapper">
+                <button
+                  type="button"
+                  className="saved-loops-toggle"
+                  onClick={() => setShowSavedLoops(!showSavedLoops)}
+                  aria-expanded={showSavedLoops}
+                  aria-haspopup="true"
+                  aria-controls="saved-loops-menu"
+                >
+                  ⭐ Saved Loops ({savedLoops.length})
+                </button>
+                {showSavedLoops && (
+                  <div 
+                    id="saved-loops-menu"
+                    className="saved-loops-dropdown"
+                    role="menu"
+                    aria-label="Saved loops"
+                  >
+                    {savedLoops.map((loop, index) => (
+                      <button
+                        key={loop.id || index}
+                        type="button"
+                        className="saved-loop-item"
+                        onClick={() => handleLoadSavedLoop(loop)}
+                        role="menuitem"
+                      >
+                        {loop.thumbnail && (
+                          <img 
+                            src={loop.thumbnail} 
+                            alt={loop.title || 'Video thumbnail'}
+                            className="saved-loop-thumbnail"
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                            }}
+                          />
+                        )}
+                        <div className="saved-loop-info">
+                          <span className="saved-loop-title">{loop.title || `Video ${loop.videoId}`}</span>
+                          {loop.author && (
+                            <span className="saved-loop-author">{loop.author}</span>
+                          )}
+                          <span className="saved-loop-times">
+                            {secondsToMMSS(loop.startTime)} - {secondsToMMSS(loop.endTime)} ({loop.targetLoops} loops)
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {recentVideos.length > 0 && (
               <div className="recent-videos-wrapper">
                 <button
