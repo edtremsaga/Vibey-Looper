@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import './App.css'
 import { secondsToMMSS, mmssToSeconds, normalizeMMSS, extractVideoId, getYouTubeErrorMessage } from './utils/helpers.js'
-import { saveRecentVideo, loadRecentVideos, saveDefaultVideo, loadDefaultVideo, clearDefaultVideo, saveSavedLoop, loadSavedLoops, deleteSavedLoop } from './utils/storage.js'
+import { saveRecentVideo, loadRecentVideos, deleteRecentVideo, saveDefaultVideo, loadDefaultVideo, clearDefaultVideo, saveSavedLoop, loadSavedLoops, deleteSavedLoop } from './utils/storage.js'
 
 // App default video (fallback)
 const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
@@ -115,6 +115,7 @@ function App() {
   const [showRecentVideos, setShowRecentVideos] = useState(false)
   const [savedLoops, setSavedLoops] = useState([])
   const [showSavedLoops, setShowSavedLoops] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null) // { type: 'recent' | 'saved', id: string, title: string }
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -866,6 +867,52 @@ function App() {
     }
   }, [player])
 
+  // Handler to delete a recent video
+  const handleDeleteRecentVideo = useCallback((videoId, videoTitle) => {
+    // Check if this is the default video
+    if (userDefaultVideo && userDefaultVideo.videoId === videoId) {
+      setValidationError('Cannot delete the default video. Remove it as default first.')
+      return
+    }
+    
+    // Show confirmation dialog
+    setDeleteConfirm({
+      type: 'recent',
+      id: videoId,
+      title: videoTitle || `Video ${videoId}`
+    })
+  }, [userDefaultVideo])
+
+  // Handler to delete a saved loop
+  const handleDeleteSavedLoop = useCallback((loopId, loopTitle) => {
+    // Show confirmation dialog
+    setDeleteConfirm({
+      type: 'saved',
+      id: loopId,
+      title: loopTitle || 'Saved loop'
+    })
+  }, [])
+
+  // Handler to confirm deletion
+  const handleConfirmDelete = useCallback(() => {
+    if (!deleteConfirm) return
+    
+    if (deleteConfirm.type === 'recent') {
+      const updated = deleteRecentVideo(deleteConfirm.id)
+      setRecentVideos(updated)
+    } else if (deleteConfirm.type === 'saved') {
+      const updated = deleteSavedLoop(deleteConfirm.id)
+      setSavedLoops(updated)
+    }
+    
+    setDeleteConfirm(null)
+  }, [deleteConfirm])
+
+  // Handler to cancel deletion
+  const handleCancelDelete = useCallback(() => {
+    setDeleteConfirm(null)
+  }, [])
+
   const handleSetAsDefault = useCallback(async () => {
     const extractedId = extractVideoId(videoId)
     if (!extractedId || extractedId.length !== 11) {
@@ -1286,6 +1333,18 @@ function App() {
                             {secondsToMMSS(loop.startTime)} - {secondsToMMSS(loop.endTime)} ({loop.targetLoops} loops)
                           </span>
                         </div>
+                        <button
+                          type="button"
+                          className="delete-button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteSavedLoop(loop.id, loop.title || `Video ${loop.videoId}`)
+                          }}
+                          aria-label={`Delete saved loop: ${loop.title || loop.videoId}`}
+                          title="Delete this saved loop"
+                        >
+                          ×
+                        </button>
                       </button>
                     ))}
                   </div>
@@ -1341,6 +1400,20 @@ function App() {
                           <span className="recent-video-id">{video.videoId}</span>
                         )}
                       </div>
+                      {!isDefault && (
+                        <button
+                          type="button"
+                          className="delete-button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteRecentVideo(video.videoId, video.title || `Video ${video.videoId}`)
+                          }}
+                          aria-label={`Delete recent video: ${video.title || video.videoId}`}
+                          title="Delete this recent video"
+                        >
+                          ×
+                        </button>
+                      )}
                     </button>
                     )
                   })}
@@ -1628,21 +1701,47 @@ function App() {
         )}
       </div>
 
-          {/* Help and Feedback links at bottom */}
-          <div className="help-link-bottom">
-            <button className="help-link-text" onClick={() => setShowHelp(true)}>
-              help
-            </button>
-            <span style={{ color: '#666', margin: '0 8px' }}>|</span>
-            <a 
-              href="mailto:vibeycraft@gmail.com?subject=Vibey Music Looper Feedback" 
-              className="help-link-text"
-            >
-              feedback
-            </a>
+      {/* Help and Feedback links at bottom */}
+      <div className="help-link-bottom">
+        <button className="help-link-text" onClick={() => setShowHelp(true)}>
+          help
+        </button>
+        <span style={{ color: '#666', margin: '0 8px' }}>|</span>
+        <a 
+          href="mailto:vibeycraft@gmail.com?subject=Vibey Music Looper Feedback" 
+          className="help-link-text"
+        >
+          feedback
+        </a>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="delete-confirm-overlay" onClick={handleCancelDelete}>
+          <div className="delete-confirm-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete {deleteConfirm.type === 'recent' ? 'Recent Video' : 'Saved Loop'}?</h3>
+            <p>{deleteConfirm.title}</p>
+            <div className="delete-confirm-buttons">
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={handleCancelDelete}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-delete"
+                onClick={handleConfirmDelete}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
-      )
-    }
+      )}
+    </div>
+  )
+}
 
-    export default App
+export default App

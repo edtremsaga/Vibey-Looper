@@ -100,6 +100,25 @@ export const loadRecentVideos = () => {
   }
 }
 
+// Helper function to delete a recent video by videoId
+export const deleteRecentVideo = (videoId) => {
+  try {
+    // Validate videoId before deleting
+    if (!videoId || typeof videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+      console.warn('Invalid videoId provided to deleteRecentVideo:', videoId)
+      return loadRecentVideos() // Return current valid state
+    }
+    
+    const recent = JSON.parse(localStorage.getItem('recentVideos') || '[]')
+    const filtered = recent.filter(v => v.videoId !== videoId)
+    localStorage.setItem('recentVideos', JSON.stringify(filtered))
+    return filtered
+  } catch (error) {
+    console.warn('Failed to delete recent video:', error)
+    return loadRecentVideos() // Return current valid state on error
+  }
+}
+
 // Helper function to save user's default video to localStorage
 // Security: Validates inputs before saving to prevent invalid data storage
 export const saveDefaultVideo = (videoId, title = '', author = '', thumbnail = '') => {
