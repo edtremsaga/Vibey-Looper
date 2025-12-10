@@ -397,8 +397,17 @@ function App() {
             }
           },
           onStateChange: (event) => {
-            // When video starts playing or buffering, it means it loaded successfully
+            // Sync isPlaying state with actual player state
             // State: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
+            if (event.data === 1) {
+              // Video is playing
+              setIsPlaying(true)
+            } else if (event.data === 2) {
+              // Video is paused
+              setIsPlaying(false)
+            }
+            
+            // When video starts playing or buffering, it means it loaded successfully
             if (event.data === 1 || event.data === 3) {
               // Use currentVideoIdRef to get the most current video ID
               const currentId = currentVideoIdRef.current
@@ -745,8 +754,21 @@ function App() {
     if (!player) return
     
     try {
-      // Toggle behavior: if playing, stop; if stopped, resume
-      if (isPlaying) {
+      // Check actual player state to handle cases where video auto-plays
+      // but isPlaying state hasn't been updated yet
+      let actualPlayerState = null
+      try {
+        actualPlayerState = player.getPlayerState ? player.getPlayerState() : null
+      } catch (error) {
+        // If we can't get player state, fall back to isPlaying state
+      }
+      
+      // Player state: 1 = playing, 2 = paused, 3 = buffering
+      // If video is actually playing (state 1 or 3), pause it
+      // Otherwise, resume it
+      const isActuallyPlaying = actualPlayerState === 1 || actualPlayerState === 3 || (actualPlayerState === null && isPlaying)
+      
+      if (isActuallyPlaying) {
         // Stop/pause the video
         if (player.pauseVideo) {
           try {
@@ -827,7 +849,22 @@ function App() {
     setVideoTitle(recentVideo.title || '')
     setValidationError('')
     setShowRecentVideos(false)
-  }, [])
+    
+    // Reset button states to default
+    setIsPlaying(false)
+    setHasBeenStopped(false)
+    setCurrentLoops(0)
+    hasLoopedRef.current = false
+    
+    // Ensure video is paused if player exists
+    if (player && player.pauseVideo) {
+      try {
+        player.pauseVideo()
+      } catch (error) {
+        // Ignore errors if player not ready
+      }
+    }
+  }, [player])
 
   const handleSetAsDefault = useCallback(async () => {
     const extractedId = extractVideoId(videoId)
@@ -926,7 +963,9 @@ function App() {
   // Handler to load a saved loop
   // Works exactly like handleRecentVideoSelect - just changes videoId and lets normal flow handle it
   const handleLoadSavedLoop = useCallback((savedLoop) => {
-    // Reset loop counter
+    // Reset button states to default
+    setIsPlaying(false)
+    setHasBeenStopped(false)
     setCurrentLoops(0)
     hasLoopedRef.current = false
     
@@ -958,10 +997,18 @@ function App() {
     // Clear any errors
     setValidationError('')
     
-    // Note: Video continues playing if it was playing (same video)
-    // New video loads but doesn't auto-play (different video)
+    // Ensure video is paused if player exists
+    if (player && player.pauseVideo) {
+      try {
+        player.pauseVideo()
+      } catch (error) {
+        // Ignore errors if player not ready
+      }
+    }
+    
+    // Note: Video loads but doesn't auto-play
     // User must click "Start Loop" button to begin looping with new settings
-  }, [videoId])
+  }, [videoId, player])
 
   const handleYouTubeSearch = useCallback(() => {
     if (searchQuery.trim()) {
