@@ -8,24 +8,46 @@ export const secondsToMMSS = (seconds) => {
 }
 
 // Convert MM:SS format or plain number to seconds
+// Security: Validates and limits input to prevent DoS attacks via extremely large values
 export const mmssToSeconds = (input) => {
   if (!input || input.trim() === '') return 0
   
-  // Handle plain number (seconds)
-  if (/^\d+$/.test(input.trim())) {
-    return parseFloat(input.trim())
+  // Security: Maximum reasonable value (24 hours = 86400 seconds)
+  // This prevents DoS attacks via extremely large time values
+  const MAX_SECONDS = 86400
+  
+  const trimmed = input.trim()
+  
+  // Handle plain number (seconds) - must be all digits
+  if (/^-?\d+$/.test(trimmed)) {
+    const seconds = parseFloat(trimmed)
+    // Clamp to valid range: 0 to MAX_SECONDS
+    if (seconds > MAX_SECONDS) return MAX_SECONDS
+    if (seconds < 0) return 0
+    return seconds
   }
   
-  // Handle MM:SS format
-  const parts = input.trim().split(':')
+  // Handle MM:SS format (or negative MM:SS)
+  const parts = trimmed.split(':')
   if (parts.length === 2) {
-    const minutes = parseInt(parts[0]) || 0
-    const seconds = parseFloat(parts[1]) || 0
-    return minutes * 60 + seconds
+    // Check if minutes part is negative
+    const minutesStr = parts[0].trim()
+    const isNegative = minutesStr.startsWith('-')
+    const minutes = Math.abs(parseInt(minutesStr) || 0)
+    const seconds = Math.max(0, parseFloat(parts[1]) || 0)
+    
+    // If negative, return 0
+    if (isNegative) return 0
+    
+    const total = minutes * 60 + seconds
+    // Clamp to valid range: 0 to MAX_SECONDS
+    return Math.min(total, MAX_SECONDS)
   }
   
-  // Fallback to parsing as seconds
-  return parseFloat(input) || 0
+  // Fallback to parsing as seconds (handles decimals, negatives, etc.)
+  const result = parseFloat(trimmed) || 0
+  // Clamp to valid range: 0 to MAX_SECONDS
+  return Math.max(0, Math.min(result, MAX_SECONDS))
 }
 
 // Extract video ID from YouTube URL or return ID if already extracted

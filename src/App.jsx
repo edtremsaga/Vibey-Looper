@@ -526,14 +526,38 @@ function App() {
   }, [player, videoId])
 
   // Validate times
+  // Security: Validates time inputs against video duration and prevents invalid ranges
   useEffect(() => {
+    // Check basic range validation
     if (endTime <= startTime) {
       setValidationError('End time must be greater than start time')
-    } else if (validationError === 'End time must be greater than start time') {
-      // Only clear time validation errors, not YouTube errors
-      setValidationError('')
+      return
     }
-  }, [startTime, endTime])
+    
+    // Check against video duration if available
+    if (videoDuration && videoDuration > 0) {
+      if (startTime >= videoDuration) {
+        setValidationError(`Start time must be less than video duration (${secondsToMMSS(videoDuration)})`)
+        return
+      }
+      if (endTime > videoDuration) {
+        setValidationError(`End time cannot exceed video duration (${secondsToMMSS(videoDuration)})`)
+        return
+      }
+    }
+    
+    // Clear validation errors if all checks pass
+    // Only clear time validation errors, not YouTube errors
+    setValidationError((prevError) => {
+      if (prevError && (
+        prevError === 'End time must be greater than start time' ||
+        prevError.includes('video duration')
+      )) {
+        return ''
+      }
+      return prevError
+    })
+  }, [startTime, endTime, videoDuration])
 
   // Update playback speed when it changes
   useEffect(() => {
@@ -1199,7 +1223,15 @@ function App() {
                 setTargetLoopsDisplay(value)
                 // Update the actual targetLoops value, default to 1 if empty
                 const numValue = value === '' ? 1 : parseInt(value, 10)
-                setTargetLoops(numValue || 1)
+                // Security: Maximum reasonable limit (10,000 loops) to prevent DoS attacks
+                const MAX_LOOPS = 10000
+                const clampedValue = Math.min(Math.max(1, numValue || 1), MAX_LOOPS)
+                setTargetLoops(clampedValue)
+                
+                // Update display if value was clamped (user entered value > MAX_LOOPS)
+                if (clampedValue !== numValue && numValue > 0 && value !== '') {
+                  setTargetLoopsDisplay(clampedValue.toString())
+                }
               }
             }}
             onBlur={(e) => {
@@ -1207,6 +1239,15 @@ function App() {
               if (e.target.value === '') {
                 setTargetLoopsDisplay('5')
                 setTargetLoops(5)
+              } else {
+                // Ensure display matches actual value (in case it was clamped)
+                const numValue = parseInt(e.target.value, 10)
+                const MAX_LOOPS = 10000
+                const clampedValue = Math.min(Math.max(1, numValue || 1), MAX_LOOPS)
+                if (clampedValue !== numValue) {
+                  setTargetLoopsDisplay(clampedValue.toString())
+                  setTargetLoops(clampedValue)
+                }
               }
             }}
             placeholder="5"

@@ -2,11 +2,30 @@
 import { extractVideoId } from './helpers.js'
 
 // Helper function to save recent video to localStorage
+// Security: Validates inputs before saving to prevent invalid data storage
 export const saveRecentVideo = (videoId, title = '', author = '', thumbnail = '') => {
   try {
+    // Validate videoId before saving (security: prevent invalid data storage)
+    if (!videoId || typeof videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+      console.warn('Invalid videoId provided to saveRecentVideo:', videoId)
+      // Return existing data instead of saving invalid data
+      return loadRecentVideos()
+    }
+    
+    // Sanitize inputs before saving
+    const sanitized = {
+      videoId, // Already validated above
+      title: typeof title === 'string' ? title.substring(0, 200) : '',
+      author: typeof author === 'string' ? author.substring(0, 100) : '',
+      thumbnail: typeof thumbnail === 'string' && thumbnail.startsWith('https://')
+        ? thumbnail.substring(0, 500)
+        : '',
+      timestamp: Date.now()
+    }
+    
     const recent = JSON.parse(localStorage.getItem('recentVideos') || '[]')
     const newRecent = [
-      { videoId, title, author, thumbnail, timestamp: Date.now() },
+      sanitized,
       ...recent.filter(v => v.videoId !== videoId)
     ].slice(0, 30) // Keep last 30
     localStorage.setItem('recentVideos', JSON.stringify(newRecent))
@@ -82,16 +101,34 @@ export const loadRecentVideos = () => {
 }
 
 // Helper function to save user's default video to localStorage
+// Security: Validates inputs before saving to prevent invalid data storage
 export const saveDefaultVideo = (videoId, title = '', author = '', thumbnail = '') => {
   try {
+    // Validate videoId before saving (security: prevent invalid data storage)
+    const extractedId = extractVideoId(videoId)
+    if (!extractedId || extractedId.length !== 11) {
+      console.warn('Invalid videoId provided to saveDefaultVideo:', videoId)
+      return null // Return null to indicate failure
+    }
+    
+    // Validate URL is provided and is a string
+    if (!videoId || typeof videoId !== 'string' || videoId.trim() === '') {
+      console.warn('Invalid URL provided to saveDefaultVideo')
+      return null
+    }
+    
+    // Sanitize inputs before saving
     const defaultVideo = {
-      videoId: extractVideoId(videoId),
-      url: videoId,
-      title,
-      author,
-      thumbnail,
+      videoId: extractedId, // Already validated above
+      url: videoId.trim().substring(0, 500), // Sanitize URL length
+      title: typeof title === 'string' ? title.substring(0, 200) : '',
+      author: typeof author === 'string' ? author.substring(0, 100) : '',
+      thumbnail: typeof thumbnail === 'string' && thumbnail.startsWith('https://')
+        ? thumbnail.substring(0, 500)
+        : '',
       timestamp: Date.now()
     }
+    
     localStorage.setItem('defaultVideo', JSON.stringify(defaultVideo))
     return defaultVideo
   } catch (error) {
