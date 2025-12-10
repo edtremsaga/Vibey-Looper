@@ -1005,8 +1005,8 @@ function App() {
                 <li>
                   <strong>Control playback:</strong>
                   <ul>
-                    <li>{isMobile ? 'Tap' : 'Click'} "Stop" (red button) to pause the loop</li>
-                    <li>{isMobile ? 'Tap' : 'Click'} "Reset" (blue button) to return to the start time and reset the loop counter</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} "Stop Loop" (red button) to pause the loop</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} "Reset Loop" (blue button) to return to the start time and reset the loop counter</li>
                     <li>Use the "Playback Speed" buttons to adjust video speed (0.5x to 2x)</li>
                   </ul>
                 </li>
@@ -1376,14 +1376,14 @@ function App() {
             onClick={handleStop}
             disabled={!player}
           >
-            {isPlaying ? 'Stop' : (hasBeenStopped ? 'Resume' : 'Stop')}
+            {isPlaying ? 'Stop Loop' : (hasBeenStopped ? 'Resume Loop' : 'Stop Loop')}
           </button>
           <button
             className="btn btn-reset"
             onClick={handleReset}
             disabled={!player}
           >
-            Reset
+            Reset Loop
           </button>
         </div>
       </div>
