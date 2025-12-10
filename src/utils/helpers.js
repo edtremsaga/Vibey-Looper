@@ -29,12 +29,18 @@ export const mmssToSeconds = (input) => {
 }
 
 // Extract video ID from YouTube URL or return ID if already extracted
+// Security: Returns empty string if input cannot be validated as a valid YouTube video ID
 export const extractVideoId = (input) => {
   if (!input) return ''
   
-  // If it's already just an ID (11 characters, alphanumeric)
-  if (/^[a-zA-Z0-9_-]{11}$/.test(input.trim())) {
-    return input.trim()
+  // Strict validation: YouTube video IDs are exactly 11 alphanumeric characters (plus _ and -)
+  const strictIdPattern = /^[a-zA-Z0-9_-]{11}$/
+  
+  const trimmed = input.trim()
+  
+  // If it's already just a valid ID (11 characters, alphanumeric)
+  if (strictIdPattern.test(trimmed)) {
+    return trimmed
   }
   
   // Try to extract from various YouTube URL formats
@@ -45,10 +51,14 @@ export const extractVideoId = (input) => {
   
   for (const pattern of patterns) {
     const match = input.match(pattern)
-    if (match) return match[1]
+    if (match && match[1] && strictIdPattern.test(match[1])) {
+      return match[1]
+    }
   }
   
-  return input.trim()
+  // Security fix: Return empty string instead of untrusted input
+  // This prevents injection of invalid data when extraction fails
+  return ''
 }
 
 // Get user-friendly error message from YouTube error code

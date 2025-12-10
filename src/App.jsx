@@ -7,21 +7,75 @@ import { saveRecentVideo, loadRecentVideos, saveDefaultVideo, loadDefaultVideo, 
 const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
 
 // Helper function to fetch video title from YouTube oEmbed API (free, no API key needed)
+// Security: Validates and sanitizes API responses to prevent XSS and data injection
 const fetchVideoTitle = async (videoId) => {
   try {
-    const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
-    const response = await fetch(url)
-    if (response.ok) {
-      const data = await response.json()
-      return {
-        title: data.title,
-        author: data.author_name,
-        thumbnail: data.thumbnail_url
-      }
+    // Validate videoId before making request (security: prevent invalid API calls)
+    if (!videoId || typeof videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+      return null
     }
-    return null
+    
+    const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+    
+    // Security: Add timeout to prevent hanging requests (5 seconds)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    
+    const response = await fetch(url, {
+      signal: controller.signal
+    })
+    
+    clearTimeout(timeoutId)
+    
+    if (!response.ok) return null
+    
+    // Security: Validate content type to ensure we're getting JSON
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('Invalid content type from YouTube API:', contentType)
+      return null
+    }
+    
+    const data = await response.json()
+    
+    // Security: Validate response structure before accessing properties
+    if (!data || typeof data !== 'object') {
+      return null
+    }
+    
+    // Security: Sanitize and validate each field with length limits
+    // Title: max 200 characters, default to empty string if invalid
+    const title = typeof data.title === 'string' && data.title.length > 0 && data.title.length <= 200
+      ? data.title.substring(0, 200)
+      : ''
+    
+    // Author: max 100 characters, optional field (default to empty string)
+    const author = typeof data.author_name === 'string' && data.author_name.length > 0 && data.author_name.length <= 100
+      ? data.author_name.substring(0, 100)
+      : ''
+    
+    // Thumbnail: must be valid HTTPS URL, max 500 characters
+    let thumbnail = ''
+    if (typeof data.thumbnail_url === 'string' && 
+        data.thumbnail_url.length > 0 && 
+        data.thumbnail_url.length <= 500 &&
+        data.thumbnail_url.startsWith('https://')) {
+      thumbnail = data.thumbnail_url.substring(0, 500)
+    }
+    
+    // Return object with validated and sanitized data
+    return {
+      title,
+      author,
+      thumbnail
+    }
   } catch (error) {
-    console.warn('Failed to fetch video title:', error)
+    // Handle abort (timeout) and other errors gracefully
+    if (error.name === 'AbortError') {
+      console.warn('YouTube API request timed out')
+    } else {
+      console.warn('Failed to fetch video title:', error)
+    }
     return null
   }
 }
