@@ -914,7 +914,9 @@
   box-shadow: 1px 1px 0px #666;
 }
 
-@media (max-width: 768px) {
+/* Hide buttons only on actual mobile phones, not tablets */
+/* iPad Safari reports 768px viewport, so we use a lower breakpoint for phones only */
+@media (max-width: 600px) {
   .default-video-controls {
     display: none;
   }
