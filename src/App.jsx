@@ -1582,6 +1582,33 @@ function App() {
         </div>
       )}
 
+      {/* Main Action Buttons - Positioned above Playback Speed */}
+      <div className="buttons-row">
+        <div className="button-row-wrapper">
+          <button
+            className="btn btn-start"
+            onClick={handleStart}
+            disabled={!player || isPlaying || !apiReady || !!validationError || endTime <= startTime}
+          >
+            Start Loop
+          </button>
+          <button
+            className="btn btn-stop"
+            onClick={handleStop}
+            disabled={!player}
+          >
+            {isPlaying ? 'Stop Loop' : (hasBeenStopped ? 'Resume Loop' : 'Stop Loop')}
+          </button>
+          <button
+            className="btn btn-reset"
+            onClick={handleReset}
+            disabled={!player}
+          >
+            Reset Loop
+          </button>
+        </div>
+      </div>
+
       <div className="speed-presets-section">
         <div className="speed-presets-container">
           <div className="speed-presets-label">Playback Speed</div>
@@ -1660,32 +1687,6 @@ function App() {
           </div>
         </div>
       )}
-
-      <div className="buttons-row">
-        <div className="button-row-wrapper">
-          <button
-            className="btn btn-start"
-            onClick={handleStart}
-            disabled={!player || isPlaying || !apiReady || !!validationError || endTime <= startTime}
-          >
-            Start Loop
-          </button>
-          <button
-            className="btn btn-stop"
-            onClick={handleStop}
-            disabled={!player}
-          >
-            {isPlaying ? 'Stop Loop' : (hasBeenStopped ? 'Resume Loop' : 'Stop Loop')}
-          </button>
-          <button
-            className="btn btn-reset"
-            onClick={handleReset}
-            disabled={!player}
-          >
-            Reset Loop
-          </button>
-        </div>
-      </div>
 
       <div className="status">
         <div className="status-main">
