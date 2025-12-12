@@ -1170,7 +1170,7 @@ function App() {
                     {!isMobile && (
                       <li>Use the search box at the top to search for songs. Click "Search on YouTube" to open results in a new tab.</li>
                     )}
-                    <li>{!isMobile ? 'Or ' : ''}Paste a YouTube URL or enter a Video ID directly in the input field below.</li>
+                    <li>Paste a YouTube URL or enter a Video ID directly in the input field below.</li>
                   </ul>
                 </li>
                 <li>
@@ -1200,10 +1200,26 @@ function App() {
                     <li>Use the "Playback Speed" buttons to adjust video speed (0.5x to 2x)</li>
                   </ul>
                 </li>
+                <li>
+                  <strong>Recent Videos:</strong>
+                  <ul>
+                    <li>The app automatically saves videos you've loaded in the "Recent" dropdown</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} the "Recent" button to see your recently viewed videos</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} any video in the recent list to load it instantly</li>
+                    <li>Hover over a video or {isMobile ? 'tap' : 'click'} the red X to remove it from your recent list</li>
+                  </ul>
+                </li>
+                <li>
+                  <strong>Save Loops:</strong>
+                  <ul>
+                    <li>After setting your start time, end time, target loops, and playback speed, {isMobile ? 'tap' : 'click'} "Save current loop configuration" to save the settings for looping that song again</li>
+                    <li>The saved loop will use the video's title and store the settings for the loop</li>
+                    <li>Access your saved loops anytime by {isMobile ? 'tapping' : 'clicking'} the "Saved Loops" button</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} any saved loop to instantly load the video and restore all the saved settings for the loop</li>
+                    <li>Hover over a saved loop and {isMobile ? 'tap' : 'click'} the red X to delete the loop</li>
+                  </ul>
+                </li>
               </ol>
-              <p className="help-tip">
-                <strong>Tip:</strong> You can also enter plain numbers (like "46") which will be treated as seconds.
-              </p>
               {!isMobile && (
                 <div className="help-keyboard">
                   <h3>Keyboard Shortcuts</h3>
