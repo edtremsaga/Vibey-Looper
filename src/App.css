@@ -233,7 +233,7 @@
   flex-direction: column;
   gap: 12px;
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   position: relative;
 }
 
@@ -961,10 +961,10 @@
 }
 
 .video-container {
-  width: 640px;
-  min-width: 640px;
-  height: 390px;
-  min-height: 390px;
+  width: 560px;
+  min-width: 560px;
+  height: 315px;
+  min-height: 315px;
   background: #000;
   border: 4px solid #fff;
   overflow: hidden;
@@ -979,9 +979,9 @@
 @media (max-width: 680px) {
   .video-container {
     width: calc(100% - 40px);
-    max-width: 640px;
-    height: calc((100vw - 40px) * 390 / 640);
-    max-height: 390px;
+    max-width: 560px;
+    height: calc((100vw - 40px) * 315 / 560);
+    max-height: 315px;
   }
 }
 
@@ -1002,16 +1002,16 @@
 }
 
 .video-container > * {
-  width: 640px !important;
-  height: 390px !important;
+  width: 560px !important;
+  height: 315px !important;
   flex-shrink: 0;
 }
 
 .video-container iframe {
-  width: 640px !important;
-  height: 390px !important;
-  min-width: 640px;
-  min-height: 390px;
+  width: 560px !important;
+  height: 315px !important;
+  min-width: 560px;
+  min-height: 315px;
   display: block;
   flex-shrink: 0;
 }
@@ -1104,7 +1104,7 @@
 /* Volume Control Section */
 .volume-control-section {
   width: 100%;
-  margin: -5px 0 20px 0;
+  margin: -5px 0 15px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1390,17 +1390,17 @@
 
 .status {
   text-align: center;
-  padding: 24px;
+  padding: 18px;
   background: #000;
   border: 4px solid #fff;
   box-shadow: 6px 6px 0px #ff0000;
   width: 100%;
-  max-width: 400px;
+  max-width: 360px;
   border-radius: 0;
 }
 
 .status-main {
-  font-size: 36px;
+  font-size: 30px;
   font-weight: 700;
   color: #fff;
   text-transform: uppercase;
@@ -1411,7 +1411,7 @@
 
 .progress-percent {
   color: #ccc;
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .current-time-display {
@@ -1427,7 +1427,7 @@
   width: 100%;
   max-width: 640px;
   margin-top: 8px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .progress-bar {
