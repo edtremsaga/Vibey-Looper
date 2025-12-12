@@ -1227,8 +1227,8 @@
 .speed-preset-btn {
   padding: 10px 16px;
   background: #000;
-  border: 3px solid #fff;
-  color: #fff;
+  border: 3px solid #aaa;
+  color: #aaa;
   font-family: 'Oswald', sans-serif;
   font-size: 14px;
   font-weight: 700;
@@ -1236,7 +1236,7 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 4px 4px 0px #666;
+  box-shadow: 4px 4px 0px #555;
   min-width: 60px;
   flex-shrink: 0;
   border-radius: 0;
@@ -1248,12 +1248,12 @@
 
 .speed-preset-btn:hover:not(:disabled) {
   transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px #666;
+  box-shadow: 2px 2px 0px #555;
 }
 
 .speed-preset-btn:active:not(:disabled) {
   transform: translate(4px, 4px);
-  box-shadow: 0px 0px 0px #666;
+  box-shadow: 0px 0px 0px #555;
 }
 
 .speed-preset-btn:disabled {
@@ -1263,13 +1263,13 @@
 }
 
 .speed-preset-btn.active {
-  border-color: #ff0000;
-  color: #ff0000;
-  box-shadow: 4px 4px 0px #ff0000;
+  border-color: #cc0000;
+  color: #cc0000;
+  box-shadow: 4px 4px 0px #990000;
 }
 
 .speed-preset-btn.active:hover:not(:disabled) {
-  box-shadow: 2px 2px 0px #ff0000;
+  box-shadow: 2px 2px 0px #990000;
 }
 
 /* Playback Speed Slider */
@@ -1377,37 +1377,38 @@
 
 .btn-start {
   background: #000;
-  border-color: #32ff32;
-  color: #32ff32;
-  box-shadow: 6px 6px 0px #00cc00;
+  border-color: #22cc22;
+  color: #22cc22;
+  box-shadow: 6px 6px 0px #008800;
 }
 
 .btn-start:hover:not(:disabled) {
-  background: rgba(0, 255, 0, 0.1);
-  box-shadow: 3px 3px 0px #00ff00;
+  background: rgba(34, 204, 34, 0.1);
+  box-shadow: 3px 3px 0px #22cc22;
 }
 
 .btn-stop {
   background: #000;
-  border-color: #ff0000;
-  color: #ff0000;
-  box-shadow: 6px 6px 0px #ff0000;
+  border-color: #cc0000;
+  color: #cc0000;
+  box-shadow: 6px 6px 0px #990000;
 }
 
 .btn-stop:hover:not(:disabled) {
-  background: rgba(255, 0, 0, 0.1);
-  box-shadow: 3px 3px 0px #ff0000;
+  background: rgba(204, 0, 0, 0.1);
+  box-shadow: 3px 3px 0px #cc0000;
 }
 
 .btn-reset {
   background: #000;
-  border-color: #fff;
-  box-shadow: 6px 6px 0px #666;
+  border-color: #aaa;
+  color: #aaa;
+  box-shadow: 6px 6px 0px #555;
 }
 
 .btn-reset:hover:not(:disabled) {
   background: #333;
-  box-shadow: 3px 3px 0px #666;
+  box-shadow: 3px 3px 0px #555;
 }
 
 .status {
