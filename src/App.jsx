@@ -1275,6 +1275,13 @@ function App() {
                   </ul>
                 </div>
               )}
+              {isMobile && (
+                <div className="help-mobile-note">
+                  <p style={{ fontStyle: 'italic', fontSize: '13px', color: '#aaa', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    <strong>Note:</strong> YouTube search, volume control, playback speed slider, loop duration display, and keyboard shortcuts are only included in the Desktop version of this app. The Mobile version does not include these items.
+                  </p>
+                </div>
+              )}
               <div className="help-disclaimer">
                 <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#999', lineHeight: '1.6', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                   This site uses the YouTube IFrame Player API and streams videos directly from YouTube.<br />
