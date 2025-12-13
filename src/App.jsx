@@ -1111,8 +1111,13 @@ function App() {
         case ' ':
           e.preventDefault()
           if (isPlaying) {
+            // Pause the loop
+            handleStop()
+          } else if (hasBeenStopped && player) {
+            // Resume from current position
             handleStop()
           } else if (player && !validationError && endTime > startTime) {
+            // Start fresh loop from beginning
             handleStart()
           }
           break
@@ -1137,11 +1142,51 @@ function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyPress)
     }
-  }, [isPlaying, player, validationError, startTime, endTime, showHelp, handleStart, handleStop, handleReset])
+  }, [isPlaying, hasBeenStopped, player, validationError, startTime, endTime, showHelp, handleStart, handleStop, handleReset])
 
   return (
-    <div className="app">
-      <div className="title-section">
+    <>
+      {/* Skip link for keyboard navigation */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      
+      {/* Live region for status updates */}
+      <div 
+        role="status" 
+        aria-live="polite" 
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {isPlaying && `Loop ${currentLoops} of ${targetLoops} completed. ${overallProgress}% complete.`}
+      </div>
+      
+      {/* Live region for errors */}
+      {validationError && (
+        <div 
+          role="alert" 
+          aria-live="assertive"
+          aria-atomic="true"
+          className="sr-only"
+        >
+          Error: {validationError}
+        </div>
+      )}
+      
+      {/* Live region for loading states */}
+      {isLoading && (
+        <div 
+          role="status" 
+          aria-live="polite"
+          aria-busy="true"
+          className="sr-only"
+        >
+          Loading video...
+        </div>
+      )}
+      
+      <div className="app" id="main-content">
+        <div className="title-section">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
           <h1 className="title">Music Looper</h1>
           <span className="title-byline">by Vibey Craft</span>
@@ -1449,12 +1494,29 @@ function App() {
           placeholder="Enter URL or Video ID of song from YouTube"
           disabled={!apiReady}
           autoFocus
+          aria-invalid={!!validationError}
+          aria-describedby={validationError ? "video-id-error" : undefined}
+          aria-errormessage={validationError ? "video-id-error" : undefined}
         />
         {isLoading && (
-          <div className="loading-indicator">Loading video...</div>
+          <div 
+            className="loading-indicator"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            Loading video...
+          </div>
         )}
         {validationError && (
-          <span className="error-message">{validationError}</span>
+          <span 
+            id="video-id-error"
+            className="error-message"
+            role="alert"
+            aria-live="assertive"
+          >
+            {validationError}
+          </span>
         )}
       </div>
 
@@ -1470,7 +1532,10 @@ function App() {
 
       <div className="controls-row">
         <div className="input-group">
-          <label htmlFor="start-time">Start Time (MM:SS)</label>
+          <label htmlFor="start-time">
+            Start Time (MM:SS)
+            <span className="sr-only">Format: minutes and seconds, for example 0:46 for 46 seconds or 1:02 for 1 minute 2 seconds</span>
+          </label>
           <input
             id="start-time"
             type="text"
@@ -1492,11 +1557,18 @@ function App() {
             }}
             placeholder="0:00"
             disabled={isPlaying}
+            aria-describedby="start-time-help"
           />
+          <span id="start-time-help" className="sr-only">
+            Enter time in minutes:seconds format. For example, 0:46 for 46 seconds or 1:02 for 1 minute 2 seconds.
+          </span>
         </div>
 
         <div className="input-group">
-          <label htmlFor="end-time">End Time (MM:SS)</label>
+          <label htmlFor="end-time">
+            End Time (MM:SS)
+            <span className="sr-only">Format: minutes and seconds, for example 1:30 for 1 minute 30 seconds</span>
+          </label>
           <input
             id="end-time"
             type="text"
@@ -1519,14 +1591,30 @@ function App() {
             placeholder="0:00"
             disabled={isPlaying}
             className={validationError ? 'error' : ''}
+            aria-invalid={!!validationError}
+            aria-describedby={validationError ? "end-time-error" : "end-time-help"}
+            aria-errormessage={validationError ? "end-time-error" : undefined}
           />
+          <span id="end-time-help" className="sr-only">
+            Enter time in minutes:seconds format. For example, 1:30 for 1 minute 30 seconds.
+          </span>
           {validationError && (
-            <span className="error-message">{validationError}</span>
+            <span 
+              id="end-time-error"
+              className="error-message"
+              role="alert"
+              aria-live="assertive"
+            >
+              {validationError}
+            </span>
           )}
         </div>
 
         <div className="input-group">
-          <label htmlFor="target-loops">Target Loops</label>
+          <label htmlFor="target-loops">
+            Target Loops
+            <span className="sr-only">Enter number of times to loop, maximum 10,000</span>
+          </label>
           <input
             id="target-loops"
             type="text"
@@ -1567,7 +1655,14 @@ function App() {
             }}
             placeholder="5"
             disabled={isPlaying}
+            aria-describedby="target-loops-help"
+            aria-valuemin="1"
+            aria-valuemax="10000"
+            aria-valuenow={targetLoops}
           />
+          <span id="target-loops-help" className="sr-only">
+            Enter how many times you want the video to loop. Minimum 1, maximum 10,000.
+          </span>
         </div>
 
         {!isMobile && endTime > startTime && (
@@ -1583,7 +1678,10 @@ function App() {
       {/* Volume Control Section - Above Playback Speed */}
       {!isMobile && (
         <div className="volume-control-section">
-          <div className="volume-control-label">Volume</div>
+          <label htmlFor="volumeSlider" className="volume-control-label">
+            Volume
+            <span className="sr-only">Current volume: {volume} percent</span>
+          </label>
           <div className="volume-control-wrapper">
             <input
               type="range"
@@ -1593,7 +1691,15 @@ function App() {
               onChange={handleVolumeChange}
               className="volume-slider"
               id="volumeSlider"
+              aria-label="Volume"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow={volume}
+              aria-valuetext={`${volume} percent`}
             />
+            <span aria-live="polite" aria-atomic="true" className="sr-only">
+              {volume}%
+            </span>
           </div>
         </div>
       )}
@@ -1669,9 +1775,10 @@ function App() {
           {/* Playback Speed Slider - Desktop Only */}
           {!isMobile && (
             <div className="speed-slider-wrapper">
-              <div className="speed-slider-label">
+              <label htmlFor="speedSlider" className="speed-slider-label">
                 {playbackSpeed.toFixed(2)}x
-              </div>
+                <span className="sr-only">Playback speed: {playbackSpeed.toFixed(2)} times normal speed</span>
+              </label>
               <input
                 type="range"
                 min="0.25"
@@ -1681,7 +1788,15 @@ function App() {
                 onChange={handlePlaybackSpeedChange}
                 className="speed-slider"
                 id="speedSlider"
+                aria-label="Playback speed"
+                aria-valuemin="0.25"
+                aria-valuemax="2.0"
+                aria-valuenow={playbackSpeed}
+                aria-valuetext={`${playbackSpeed.toFixed(2)} times normal speed`}
               />
+              <span aria-live="polite" aria-atomic="true" className="sr-only">
+                {playbackSpeed.toFixed(2)}x
+              </span>
             </div>
           )}
         </div>
@@ -1690,12 +1805,23 @@ function App() {
       {/* Progress bar */}
       {isPlaying && endTime > startTime && (
         <div className="progress-container">
-          <div className="progress-bar">
+          <div 
+            className="progress-bar"
+            role="progressbar"
+            aria-valuenow={loopProgress}
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-label="Loop progress"
+            aria-describedby="progress-text"
+          >
             <div 
               className="progress-fill" 
               style={{ width: `${loopProgress}%` }}
             ></div>
           </div>
+          <span id="progress-text" className="sr-only">
+            {loopProgress}% complete
+          </span>
           <div className="progress-labels">
             <span>{startTimeFormatted}</span>
             <span className="current-time">{currentTimeFormatted}</span>
@@ -1758,6 +1884,7 @@ function App() {
         </div>
       )}
     </div>
+    </>
   )
 }
 
