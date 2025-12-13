@@ -1376,14 +1376,14 @@ input[type="range"]:focus-visible {
 .button-row-wrapper {
   display: flex;
   flex-direction: row;
-  gap: 20px;
+  gap: 14px;
   justify-content: center;
   max-width: 530px;
   width: 100%;
 }
 
 .btn {
-  padding: 16px 32px;
+  padding: 12px 32px;
   font-size: 16px;
   font-weight: 700;
   border: 3px solid #fff;
@@ -1393,7 +1393,7 @@ input[type="range"]:focus-visible {
   text-transform: uppercase;
   letter-spacing: 3px;
   transition: all 0.2s;
-  box-shadow: 6px 6px 0px #666;
+  box-shadow: 4px 4px 0px #666;
   font-family: 'Oswald', sans-serif;
   position: relative;
   border-radius: 0;
@@ -1401,12 +1401,12 @@ input[type="range"]:focus-visible {
 }
 
 .btn:hover:not(:disabled) {
-  transform: translate(3px, 3px);
-  box-shadow: 3px 3px 0px #666;
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #666;
 }
 
 .btn:active:not(:disabled) {
-  transform: translate(6px, 6px);
+  transform: translate(4px, 4px);
   box-shadow: 0px 0px 0px #666;
 }
 
@@ -1420,36 +1420,36 @@ input[type="range"]:focus-visible {
   background: #000;
   border-color: #22cc22;
   color: #22cc22;
-  box-shadow: 6px 6px 0px #008800;
+  box-shadow: 4px 4px 0px #008800;
 }
 
 .btn-start:hover:not(:disabled) {
   background: rgba(34, 204, 34, 0.1);
-  box-shadow: 3px 3px 0px #22cc22;
+  box-shadow: 2px 2px 0px #22cc22;
 }
 
 .btn-stop {
   background: #000;
   border-color: #cc0000;
   color: #cc0000;
-  box-shadow: 6px 6px 0px #990000;
+  box-shadow: 4px 4px 0px #990000;
 }
 
 .btn-stop:hover:not(:disabled) {
   background: rgba(204, 0, 0, 0.1);
-  box-shadow: 3px 3px 0px #cc0000;
+  box-shadow: 2px 2px 0px #cc0000;
 }
 
 .btn-reset {
   background: #000;
   border-color: #aaa;
   color: #aaa;
-  box-shadow: 6px 6px 0px #555;
+  box-shadow: 4px 4px 0px #555;
 }
 
 .btn-reset:hover:not(:disabled) {
   background: #333;
-  box-shadow: 3px 3px 0px #555;
+  box-shadow: 2px 2px 0px #555;
 }
 
 .status {
