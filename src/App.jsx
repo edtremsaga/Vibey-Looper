@@ -126,11 +126,21 @@ function App() {
   // Detect mobile device
   useEffect(() => {
     const checkMobile = () => {
-      // Use viewport width <= 768 OR touch capability as mobile indicator
+      // Multiple detection methods for reliability
+      const viewportWidth = window.innerWidth
       const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-      const isSmallScreen = window.innerWidth <= 768
-      // Consider mobile if: small screen OR (has touch AND screen <= 1024px)
-      setIsMobile(isSmallScreen || (hasTouch && window.innerWidth <= 1024))
+      const userAgent = navigator.userAgent.toLowerCase()
+      const isMobileUA = /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)
+      
+      // Consider mobile if:
+      // 1. Viewport <= 768px, OR
+      // 2. Has touch capability AND viewport <= 1024px, OR
+      // 3. User agent indicates mobile device
+      const isMobileDevice = viewportWidth <= 768 || 
+                            (hasTouch && viewportWidth <= 1024) || 
+                            isMobileUA
+      
+      setIsMobile(isMobileDevice)
     }
     
     // Check on mount
