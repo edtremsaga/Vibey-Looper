@@ -315,3 +315,5 @@ fetch('https://api.chords.alday.dev/chords/C')
 The free API landscape for chord detection is limited, making ChordMini the clear choice for a free POC.
 
 
+
+
