@@ -122,6 +122,7 @@ function App() {
   const hasLoopedRef = useRef(false)
   const loadingTimeoutRef = useRef(null)
   const isCheckingTimeRef = useRef(false)
+  const loadingFromSavedLoopRef = useRef(null) // Track start time when loading from saved loop
 
   // Detect mobile device
   useEffect(() => {
@@ -422,6 +423,24 @@ function App() {
               setIsPlaying(false)
             }
             
+            // When video is cued (state 5), it's ready and showing thumbnail
+            // If we're loading from a saved loop, seek to the start time
+            // Note: cueVideoById doesn't auto-play, so we don't need to pause
+            if (event.data === 5 && loadingFromSavedLoopRef.current !== null) {
+              const startTime = loadingFromSavedLoopRef.current
+              if (event.target && event.target.seekTo) {
+                try {
+                  // Seek to start time - video is already paused from cueVideoById
+                  event.target.seekTo(startTime, true)
+                  loadingFromSavedLoopRef.current = null // Clear flag after successful seek
+                  setIsPlaying(false) // Ensure state reflects paused
+                } catch (error) {
+                  console.warn('Failed to seek to saved loop start time:', error)
+                  // Keep flag set, will retry on next state change or timeout
+                }
+              }
+            }
+            
             // When video starts playing or buffering, it means it loaded successfully
             if (event.data === 1 || event.data === 3) {
               // Use currentVideoIdRef to get the most current video ID
@@ -476,14 +495,34 @@ function App() {
   // Load new video when videoId changes (but player already exists)
   // RESTORED TO EXACT PRODUCTION CODE (commit 5a927af) - this works perfectly for recent videos
   useEffect(() => {
-    if (!player || !player.loadVideoById || videoId === currentVideoIdRef.current) return
+    if (!player || videoId === currentVideoIdRef.current) return
     
     const extractedId = extractVideoId(videoId)
     if (extractedId) {
+      const isLoadingFromSavedLoop = loadingFromSavedLoopRef.current !== null
+      
+      // For saved loops, use cueVideoById to show thumbnail without auto-play
+      // For regular loads, use loadVideoById
+      const loadMethod = isLoadingFromSavedLoop && player.cueVideoById 
+        ? player.cueVideoById 
+        : player.loadVideoById
+      
+      if (!loadMethod) return
+      
       currentVideoIdRef.current = videoId
       setIsLoading(true)
       try {
-        player.loadVideoById(extractedId)
+        loadMethod.call(player, extractedId)
+        
+        // Only pause immediately for loadVideoById (not needed for cueVideoById)
+        if (!isLoadingFromSavedLoop && player.pauseVideo) {
+          try {
+            player.pauseVideo()
+          } catch (error) {
+            // Ignore if player not ready yet
+          }
+        }
+        
         setIsPlaying(false)
         setCurrentLoops(0)
         hasLoopedRef.current = false
@@ -495,6 +534,22 @@ function App() {
         
         loadingTimeoutRef.current = setTimeout(() => {
           setIsLoading(false)
+          
+          // For saved loops, seek to start time after video is cued
+          // (cueVideoById doesn't auto-play, so we just need to seek)
+          if (isLoadingFromSavedLoop && player && player.seekTo) {
+            const startTime = loadingFromSavedLoopRef.current
+            if (startTime !== null) {
+              try {
+                player.seekTo(startTime, true)
+                loadingFromSavedLoopRef.current = null // Clear flag after seeking
+              } catch (error) {
+                console.warn('Failed to seek to saved loop start time in timeout:', error)
+                // Keep flag set, onStateChange will retry
+              }
+            }
+          }
+          
           // Fetch and save video info to recent videos after successful load
           if (extractedId && extractedId.length === 11) {
             fetchVideoTitle(extractedId).then(videoInfo => {
@@ -1034,12 +1089,9 @@ function App() {
     // This works exactly like recent videos - just change videoId and let useEffect handle loading
     const currentVideoId = extractVideoId(videoId)
     const savedVideoId = extractVideoId(savedLoop.url)
-    if (currentVideoId !== savedVideoId) {
-      setVideoId(savedLoop.url)
-      // Video loading will be handled by the useEffect watching videoId
-    }
+    const isSameVideo = currentVideoId === savedVideoId
     
-    // Set times (convert to display format)
+    // Set times (convert to display format) FIRST, before loading video
     setStartTime(savedLoop.startTime)
     setStartTimeDisplay(secondsToMMSS(savedLoop.startTime))
     setEndTime(savedLoop.endTime)
@@ -1052,19 +1104,35 @@ function App() {
     // Set playback speed
     setPlaybackSpeed(savedLoop.playbackSpeed || 1)
     
+    // Track that we're loading from saved loop - store start time for seeking
+    loadingFromSavedLoopRef.current = savedLoop.startTime
+    
     // Close dropdown
     setShowSavedLoops(false)
     
     // Clear any errors
     setValidationError('')
     
-    // Ensure video is paused if player exists
-    if (player && player.pauseVideo) {
+    // If same video and player is ready, seek to start time and pause immediately
+    if (isSameVideo && player) {
       try {
-        player.pauseVideo()
+        // Pause first to stop any auto-play
+        if (player.pauseVideo) {
+          player.pauseVideo()
+        }
+        // Then seek to start time
+        if (player.seekTo) {
+          player.seekTo(savedLoop.startTime, true)
+        }
+        loadingFromSavedLoopRef.current = null // Clear flag after seeking
       } catch (error) {
-        // Ignore errors if player not ready
+        // If seek fails, keep flag set so onStateChange can retry
+        console.warn('Failed to seek to start time immediately:', error)
       }
+    } else if (!isSameVideo) {
+      // For new video, set videoId - loading will be handled by useEffect
+      setVideoId(savedLoop.url)
+      // Video loading will be handled by the useEffect watching videoId
     }
     
     // Note: Video loads but doesn't auto-play
