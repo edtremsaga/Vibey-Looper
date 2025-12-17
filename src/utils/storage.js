@@ -27,7 +27,7 @@ export const saveRecentVideo = (videoId, title = '', author = '', thumbnail = ''
     const newRecent = [
       sanitized,
       ...recent.filter(v => v.videoId !== videoId)
-    ].slice(0, 30) // Keep last 30
+    ].slice(0, 100) // Keep last 100
     localStorage.setItem('recentVideos', JSON.stringify(newRecent))
     return newRecent
   } catch (error) {
@@ -86,7 +86,7 @@ export const loadRecentVideos = () => {
     const validated = data
       .map(validateRecentVideo)
       .filter(video => video !== null) // Remove invalid entries
-      .slice(0, 30) // Enforce maximum limit
+      .slice(0, 100) // Enforce maximum limit
     
     // Log if entries were filtered out (for debugging)
     if (validated.length < data.length) {
