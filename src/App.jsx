@@ -123,6 +123,7 @@ function App() {
   const loadingTimeoutRef = useRef(null)
   const isCheckingTimeRef = useRef(false)
   const loadingFromSavedLoopRef = useRef(null) // Track start time when loading from saved loop
+  const loadingFromRecentVideoRef = useRef(false) // Track when loading from recent video
 
   // Detect mobile device
   useEffect(() => {
@@ -500,10 +501,11 @@ function App() {
     const extractedId = extractVideoId(videoId)
     if (extractedId) {
       const isLoadingFromSavedLoop = loadingFromSavedLoopRef.current !== null
+      const isLoadingFromRecentVideo = loadingFromRecentVideoRef.current === true
       
-      // For saved loops, use cueVideoById to show thumbnail without auto-play
-      // For regular loads, use loadVideoById
-      const loadMethod = isLoadingFromSavedLoop && player.cueVideoById 
+      // For saved loops and recent videos, use cueVideoById to show thumbnail without auto-play
+      // For regular loads (manual input), use loadVideoById
+      const loadMethod = (isLoadingFromSavedLoop || isLoadingFromRecentVideo) && player.cueVideoById 
         ? player.cueVideoById 
         : player.loadVideoById
       
@@ -515,7 +517,7 @@ function App() {
         loadMethod.call(player, extractedId)
         
         // Only pause immediately for loadVideoById (not needed for cueVideoById)
-        if (!isLoadingFromSavedLoop && player.pauseVideo) {
+        if (!isLoadingFromSavedLoop && !isLoadingFromRecentVideo && player.pauseVideo) {
           try {
             player.pauseVideo()
           } catch (error) {
@@ -534,6 +536,11 @@ function App() {
         
         loadingTimeoutRef.current = setTimeout(() => {
           setIsLoading(false)
+          
+          // Clear recent video flag after loading
+          if (isLoadingFromRecentVideo) {
+            loadingFromRecentVideoRef.current = false
+          }
           
           // For saved loops, seek to start time after video is cued
           // (cueVideoById doesn't auto-play, so we just need to seek)
@@ -580,6 +587,8 @@ function App() {
       } catch (error) {
         setIsLoading(false)
         setValidationError('Error loading video. Please check the URL or Video ID and try again.')
+        // Clear flags on error
+        loadingFromRecentVideoRef.current = false
       }
     }
   }, [apiReady, playbackSpeed, videoId])
@@ -915,6 +924,10 @@ function App() {
 
   const handleRecentVideoSelect = useCallback((recentVideo) => {
     const url = `https://www.youtube.com/watch?v=${recentVideo.videoId}`
+    
+    // Track that we're loading from recent video (for cueVideoById)
+    loadingFromRecentVideoRef.current = true
+    
     setVideoId(url)
     setVideoTitle(recentVideo.title || '')
     setValidationError('')
@@ -926,15 +939,8 @@ function App() {
     setCurrentLoops(0)
     hasLoopedRef.current = false
     
-    // Ensure video is paused if player exists
-    if (player && player.pauseVideo) {
-      try {
-        player.pauseVideo()
-      } catch (error) {
-        // Ignore errors if player not ready
-      }
-    }
-  }, [player])
+    // Note: Don't pause here - let cueVideoById handle it (shows thumbnail without auto-play)
+  }, [])
 
   // Handler to delete a recent video
   const handleDeleteRecentVideo = useCallback((videoId, videoTitle) => {
