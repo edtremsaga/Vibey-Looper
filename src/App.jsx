@@ -494,7 +494,7 @@ function App() {
   }, [apiReady, playbackSpeed, videoId])
 
   // Load new video when videoId changes (but player already exists)
-  // RESTORED TO EXACT PRODUCTION CODE (commit 5a927af) - this works perfectly for recent videos
+  // Use cueVideoById for all video loads to consistently show thumbnail without auto-play
   useEffect(() => {
     if (!player || videoId === currentVideoIdRef.current) return
     
@@ -503,25 +503,28 @@ function App() {
       const isLoadingFromSavedLoop = loadingFromSavedLoopRef.current !== null
       const isLoadingFromRecentVideo = loadingFromRecentVideoRef.current === true
       
-      // For saved loops and recent videos, use cueVideoById to show thumbnail without auto-play
-      // For regular loads (manual input), use loadVideoById
-      const loadMethod = (isLoadingFromSavedLoop || isLoadingFromRecentVideo) && player.cueVideoById 
-        ? player.cueVideoById 
-        : player.loadVideoById
+      // Use cueVideoById for all video loads to show thumbnail without auto-play
+      // Fallback to loadVideoById if cueVideoById is not available
+      const loadMethod = player.cueVideoById || player.loadVideoById
       
       if (!loadMethod) return
       
       currentVideoIdRef.current = videoId
       setIsLoading(true)
       try {
-        loadMethod.call(player, extractedId)
-        
-        // Only pause immediately for loadVideoById (not needed for cueVideoById)
-        if (!isLoadingFromSavedLoop && !isLoadingFromRecentVideo && player.pauseVideo) {
-          try {
-            player.pauseVideo()
-          } catch (error) {
-            // Ignore if player not ready yet
+        // Use cueVideoById for all loads (shows thumbnail, no auto-play)
+        if (player.cueVideoById) {
+          player.cueVideoById(extractedId)
+        } else {
+          // Fallback to loadVideoById if cueVideoById not available
+          player.loadVideoById(extractedId)
+          // Pause immediately if using loadVideoById fallback
+          if (player.pauseVideo) {
+            try {
+              player.pauseVideo()
+            } catch (error) {
+              // Ignore if player not ready yet
+            }
           }
         }
         
