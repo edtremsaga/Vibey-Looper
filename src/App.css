@@ -1118,16 +1118,68 @@ input[type="range"]:focus-visible {
 
 .controls-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr) auto;
-  gap: 20px;
+  grid-template-columns: 1.625fr 1.625fr 0.7fr 0.55fr;
+  gap: 15px;
   width: 100%;
   margin-bottom: 2px;
   align-items: start;
 }
 
+.controls-row .input-group label {
+  text-align: center;
+}
+
+.input-with-button {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.input-with-button input {
+  flex: 1.9;
+}
+
+.input-with-button .btn-set-from-video {
+  flex: 0.5;
+}
+
+.btn-set-from-video {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 2px solid #fff;
+  background: #000;
+  color: #fff;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  box-shadow: 2px 2px 0px #666;
+  font-family: 'Oswald', sans-serif;
+  border-radius: 0;
+  white-space: nowrap;
+}
+
+.btn-set-from-video:hover:not(:disabled) {
+  background: #333;
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #666;
+}
+
+.btn-set-from-video:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px #666;
+}
+
+.btn-set-from-video:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Loop Duration Display - Separate Column */
 .loop-duration-group {
-  min-width: 180px;
+  min-width: 0;
 }
 
 .loop-duration-display-box {
@@ -1151,6 +1203,14 @@ input[type="range"]:focus-visible {
   .controls-row {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .input-with-button {
+    flex-direction: column;
+  }
+
+  .btn-set-from-video {
+    width: 100%;
   }
   
   .loop-duration-group {

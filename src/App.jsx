@@ -942,6 +942,12 @@ function App() {
     setCurrentLoops(0)
     hasLoopedRef.current = false
     
+    // Reset start and end times to defaults (same as loading a brand new video)
+    setStartTime(0)
+    setEndTime(10)
+    setStartTimeDisplay('0:00')
+    setEndTimeDisplay('0:10')
+    
     // Note: Don't pause here - let cueVideoById handle it (shows thumbnail without auto-play)
   }, [])
 
@@ -1172,6 +1178,27 @@ function App() {
     const newSpeed = parseFloat(e.target.value)
     setPlaybackSpeed(newSpeed)
   }, [])
+
+  const handleSetFromCurrentPosition = useCallback((type) => {
+    if (!player || !player.getCurrentTime) {
+      return
+    }
+    
+    try {
+      const currentTime = player.getCurrentTime()
+      const formatted = secondsToMMSS(currentTime)
+      
+      if (type === 'start') {
+        setStartTimeDisplay(formatted)
+        setStartTime(currentTime)
+      } else {
+        setEndTimeDisplay(formatted)
+        setEndTime(currentTime)
+      }
+    } catch (error) {
+      console.warn('Failed to get current time:', error)
+    }
+  }, [player])
 
   // Memoize progress calculations to avoid recalculating on every render
   const loopProgress = useMemo(() => {
@@ -1634,29 +1661,41 @@ function App() {
             Start Time (MM:SS)
             <span className="sr-only">Format: minutes and seconds, for example 0:46 for 46 seconds or 1:02 for 1 minute 2 seconds</span>
           </label>
-          <input
-            id="start-time"
-            type="text"
-            value={startTimeDisplay}
-            onChange={(e) => {
-              const displayValue = e.target.value
-              setStartTimeDisplay(displayValue)
-              const seconds = mmssToSeconds(displayValue)
-              setStartTime(seconds)
-            }}
-            onBlur={(e) => {
-              // Normalize MM:SS format on blur (e.g., "0:75" → "1:15")
-              const normalized = normalizeMMSS(e.target.value)
-              if (normalized !== e.target.value) {
-                setStartTimeDisplay(normalized)
-                const seconds = mmssToSeconds(normalized)
+          <div className="input-with-button">
+            <input
+              id="start-time"
+              type="text"
+              value={startTimeDisplay}
+              onChange={(e) => {
+                const displayValue = e.target.value
+                setStartTimeDisplay(displayValue)
+                const seconds = mmssToSeconds(displayValue)
                 setStartTime(seconds)
-              }
-            }}
-            placeholder="0:00"
-            disabled={isPlaying}
-            aria-describedby="start-time-help"
-          />
+              }}
+              onBlur={(e) => {
+                // Normalize MM:SS format on blur (e.g., "0:75" → "1:15")
+                const normalized = normalizeMMSS(e.target.value)
+                if (normalized !== e.target.value) {
+                  setStartTimeDisplay(normalized)
+                  const seconds = mmssToSeconds(normalized)
+                  setStartTime(seconds)
+                }
+              }}
+              placeholder="0:00"
+              disabled={isPlaying}
+              aria-describedby="start-time-help"
+            />
+            <button
+              type="button"
+              className="btn-set-from-video"
+              onClick={() => handleSetFromCurrentPosition('start')}
+              disabled={!player || !player.getCurrentTime || isLoading}
+              title="Set start time from current video position"
+              aria-label="Set start time from current video position"
+            >
+              Set from Video
+            </button>
+          </div>
           <span id="start-time-help" className="sr-only">
             Enter time in minutes:seconds format. For example, 0:46 for 46 seconds or 1:02 for 1 minute 2 seconds.
           </span>
@@ -1667,32 +1706,44 @@ function App() {
             End Time (MM:SS)
             <span className="sr-only">Format: minutes and seconds, for example 1:30 for 1 minute 30 seconds</span>
           </label>
-          <input
-            id="end-time"
-            type="text"
-            value={endTimeDisplay}
-            onChange={(e) => {
-              const displayValue = e.target.value
-              setEndTimeDisplay(displayValue)
-              const seconds = mmssToSeconds(displayValue)
-              setEndTime(seconds)
-            }}
-            onBlur={(e) => {
-              // Normalize MM:SS format on blur (e.g., "0:75" → "1:15")
-              const normalized = normalizeMMSS(e.target.value)
-              if (normalized !== e.target.value) {
-                setEndTimeDisplay(normalized)
-                const seconds = mmssToSeconds(normalized)
+          <div className="input-with-button">
+            <input
+              id="end-time"
+              type="text"
+              value={endTimeDisplay}
+              onChange={(e) => {
+                const displayValue = e.target.value
+                setEndTimeDisplay(displayValue)
+                const seconds = mmssToSeconds(displayValue)
                 setEndTime(seconds)
-              }
-            }}
-            placeholder="0:00"
-            disabled={isPlaying}
-            className={validationError ? 'error' : ''}
-            aria-invalid={!!validationError}
-            aria-describedby={validationError ? "end-time-error" : "end-time-help"}
-            aria-errormessage={validationError ? "end-time-error" : undefined}
-          />
+              }}
+              onBlur={(e) => {
+                // Normalize MM:SS format on blur (e.g., "0:75" → "1:15")
+                const normalized = normalizeMMSS(e.target.value)
+                if (normalized !== e.target.value) {
+                  setEndTimeDisplay(normalized)
+                  const seconds = mmssToSeconds(normalized)
+                  setEndTime(seconds)
+                }
+              }}
+              placeholder="0:00"
+              disabled={isPlaying}
+              className={validationError ? 'error' : ''}
+              aria-invalid={!!validationError}
+              aria-describedby={validationError ? "end-time-error" : "end-time-help"}
+              aria-errormessage={validationError ? "end-time-error" : undefined}
+            />
+            <button
+              type="button"
+              className="btn-set-from-video"
+              onClick={() => handleSetFromCurrentPosition('end')}
+              disabled={!player || !player.getCurrentTime || isLoading}
+              title="Set end time from current video position"
+              aria-label="Set end time from current video position"
+            >
+              Set from Video
+            </button>
+          </div>
           <span id="end-time-help" className="sr-only">
             Enter time in minutes:seconds format. For example, 1:30 for 1 minute 30 seconds.
           </span>
@@ -1710,7 +1761,7 @@ function App() {
 
         <div className="input-group">
           <label htmlFor="target-loops">
-            Target Loops
+            # of Loops
             <span className="sr-only">Enter number of times to loop, maximum 10,000</span>
           </label>
           <input
@@ -1763,11 +1814,11 @@ function App() {
           </span>
         </div>
 
-        {!isMobile && endTime > startTime && (
+        {!isMobile && (
           <div className="input-group loop-duration-group">
-            <label>Loop Duration</label>
+            <label>Loop Time</label>
             <div className="loop-duration-display-box">
-              {secondsToMMSS(endTime - startTime)}
+              {endTime > startTime ? secondsToMMSS(endTime - startTime) : '0:00'}
             </div>
           </div>
         )}
