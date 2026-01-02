@@ -124,8 +124,6 @@ function App() {
   const isCheckingTimeRef = useRef(false)
   const loadingFromSavedLoopRef = useRef(null) // Track start time when loading from saved loop
   const loadingFromRecentVideoRef = useRef(false) // Track when loading from recent video
-  const shouldSetEndTimeToDurationRef = useRef(false) // Track if we should set endTime to video duration when it becomes available
-  const errorTimeoutRef = useRef(null) // Track timeout for clearing error messages
 
   // Detect mobile device
   useEffect(() => {
@@ -632,15 +630,6 @@ function App() {
     return () => clearTimeout(timer)
   }, [player, videoId])
 
-  // Update endTime to video duration when loading from recent video
-  useEffect(() => {
-    if (shouldSetEndTimeToDurationRef.current && videoDuration && videoDuration > 0) {
-      setEndTime(videoDuration)
-      setEndTimeDisplay(secondsToMMSS(videoDuration))
-      shouldSetEndTimeToDurationRef.current = false // Reset flag after updating
-    }
-  }, [videoDuration])
-
   // Validate times
   // Security: Validates time inputs against video duration and prevents invalid ranges
   useEffect(() => {
@@ -930,28 +919,11 @@ function App() {
   }, [player])
 
   const handleVideoIdChange = useCallback((newVideoId) => {
-    // Extract video IDs to check if this is a different video
-    const currentVideoId = extractVideoId(videoId)
-    const newExtractedId = extractVideoId(newVideoId)
-    
-    // If this is a different video (and not loading from saved/recent), reset times to defaults
-    if (newExtractedId && newExtractedId !== currentVideoId && 
-        !loadingFromSavedLoopRef.current && !loadingFromRecentVideoRef.current) {
-      // Reset start time to default
-      setStartTime(0)
-      setStartTimeDisplay('0:00')
-      
-      // Reset end time to temporary default (will be updated to video duration when available)
-      setEndTime(10)
-      setEndTimeDisplay('0:10')
-      shouldSetEndTimeToDurationRef.current = true
-    }
-    
     setVideoId(newVideoId)
     setValidationError('')
     setShowRecentVideos(false)
     // Video loading will be handled by the useEffect watching videoId
-  }, [videoId])
+  }, [])
 
   const handleRecentVideoSelect = useCallback((recentVideo) => {
     const url = `https://www.youtube.com/watch?v=${recentVideo.videoId}`
@@ -970,28 +942,30 @@ function App() {
     setCurrentLoops(0)
     hasLoopedRef.current = false
     
-    // Reset start time to default
+    // Reset start and end times to defaults (same as loading a brand new video)
     setStartTime(0)
-    setStartTimeDisplay('0:00')
-    
-    // Mark that we should set endTime to video duration when it becomes available
-    // For now, set a temporary default (will be updated when duration loads)
     setEndTime(10)
+    setStartTimeDisplay('0:00')
     setEndTimeDisplay('0:10')
-    shouldSetEndTimeToDurationRef.current = true
     
     // Note: Don't pause here - let cueVideoById handle it (shows thumbnail without auto-play)
   }, [])
 
   // Handler to delete a recent video
   const handleDeleteRecentVideo = useCallback((videoId, videoTitle) => {
+    // Check if this is the default video
+    if (userDefaultVideo && userDefaultVideo.videoId === videoId) {
+      setValidationError('Cannot delete the default video. Remove it as default first.')
+      return
+    }
+    
     // Show confirmation dialog
     setDeleteConfirm({
       type: 'recent',
       id: videoId,
       title: videoTitle || `Video ${videoId}`
     })
-  }, [])
+  }, [userDefaultVideo])
 
   // Handler to delete a saved loop
   const handleDeleteSavedLoop = useCallback((loopId, loopTitle) => {
@@ -1008,22 +982,7 @@ function App() {
     if (!deleteConfirm) return
     
     if (deleteConfirm.type === 'recent') {
-      const deletedVideoId = deleteConfirm.id
-      
-      // Check if this is the default video - if so, clear it as default
-      if (userDefaultVideo && userDefaultVideo.videoId === deletedVideoId) {
-        clearDefaultVideo()
-        setUserDefaultVideo(null)
-        setIsDefaultVideo(false)
-        
-        // If the current video being displayed is the one being deleted, switch to app default
-        const currentVideoId = extractVideoId(videoId)
-        if (currentVideoId === deletedVideoId) {
-          setVideoId(APP_DEFAULT_VIDEO)
-        }
-      }
-      
-      const updated = deleteRecentVideo(deletedVideoId)
+      const updated = deleteRecentVideo(deleteConfirm.id)
       setRecentVideos(updated)
     } else if (deleteConfirm.type === 'saved') {
       const updated = deleteSavedLoop(deleteConfirm.id)
@@ -1031,7 +990,7 @@ function App() {
     }
     
     setDeleteConfirm(null)
-  }, [deleteConfirm, userDefaultVideo, videoId])
+  }, [deleteConfirm])
 
   // Handler to cancel deletion
   const handleCancelDelete = useCallback(() => {
@@ -1141,9 +1100,6 @@ function App() {
     setCurrentLoops(0)
     hasLoopedRef.current = false
     
-    // Don't set endTime to duration for saved loops (they have their own times)
-    shouldSetEndTimeToDurationRef.current = false
-    
     // Set video (only if it's different from current video)
     // This works exactly like recent videos - just change videoId and let useEffect handle loading
     const currentVideoId = extractVideoId(videoId)
@@ -1224,40 +1180,12 @@ function App() {
   }, [])
 
   const handleSetFromCurrentPosition = useCallback((type) => {
-    // Clear any existing error timeout
-    if (errorTimeoutRef.current) {
-      clearTimeout(errorTimeoutRef.current)
-      errorTimeoutRef.current = null
-    }
-    
     if (!player || !player.getCurrentTime) {
-      setValidationError('Video player is not ready. Please wait for the video to load.')
-      // Clear error after 3 seconds
-      errorTimeoutRef.current = setTimeout(() => {
-        setValidationError('')
-        errorTimeoutRef.current = null
-      }, 3000)
       return
     }
     
     try {
       const currentTime = player.getCurrentTime()
-      
-      // Validate that currentTime is a valid number
-      if (typeof currentTime !== 'number' || isNaN(currentTime) || currentTime < 0) {
-        console.warn('Invalid current time value:', currentTime)
-        setValidationError('Unable to get current video time. Please try again.')
-        // Clear error after 3 seconds
-        errorTimeoutRef.current = setTimeout(() => {
-          setValidationError('')
-          errorTimeoutRef.current = null
-        }, 3000)
-        return
-      }
-      
-      // Clear any previous errors on success
-      setValidationError('')
-      
       const formatted = secondsToMMSS(currentTime)
       
       if (type === 'start') {
@@ -1269,12 +1197,6 @@ function App() {
       }
     } catch (error) {
       console.warn('Failed to get current time:', error)
-      setValidationError('Failed to get current video time. Please try again.')
-      // Clear error after 3 seconds
-      errorTimeoutRef.current = setTimeout(() => {
-        setValidationError('')
-        errorTimeoutRef.current = null
-      }, 3000)
     }
   }, [player])
 
@@ -1419,8 +1341,6 @@ function App() {
                   <ul>
                     <li><strong>Start Time:</strong> Enter the start time in MM:SS format (e.g., "0:46" for 46 seconds, "1:02" for 1 minute 2 seconds)</li>
                     <li><strong>End Time:</strong> Enter the end time in MM:SS format (e.g., "1:30" for 1 minute 30 seconds)</li>
-                    <li><strong>Set from Video buttons:</strong> Instead of typing times manually, {isMobile ? 'tap' : 'click'} the "Set from Video" button next to Start Time or End Time to automatically set that value to the video's current position. These buttons work whether the video is playing or paused, making it easy to mark loop points while watching a YouTube video.</li>
-                    <li>You can still manually enter Start and End times by typing directly into the Start and End Time input boxes.</li>
                   </ul>
                 </li>
                 <li>
@@ -1666,18 +1586,20 @@ function App() {
                           <span className="recent-video-id">{video.videoId}</span>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        className="delete-button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteRecentVideo(video.videoId, video.title || `Video ${video.videoId}`)
-                        }}
-                        aria-label={`Delete recent video: ${video.title || video.videoId}`}
-                        title="Delete this recent video"
-                      >
-                        ×
-                      </button>
+                      {!isDefault && (
+                        <button
+                          type="button"
+                          className="delete-button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteRecentVideo(video.videoId, video.title || `Video ${video.videoId}`)
+                          }}
+                          aria-label={`Delete recent video: ${video.title || video.videoId}`}
+                          title="Delete this recent video"
+                        >
+                          ×
+                        </button>
+                      )}
                     </button>
                     )
                   })}
@@ -1771,7 +1693,7 @@ function App() {
               title="Set start time from current video position"
               aria-label="Set start time from current video position"
             >
-              Set from Video
+              {isMobile ? 'Set' : 'Set from Video'}
             </button>
           </div>
           <span id="start-time-help" className="sr-only">
@@ -1819,7 +1741,7 @@ function App() {
               title="Set end time from current video position"
               aria-label="Set end time from current video position"
             >
-              Set from Video
+              {isMobile ? 'Set' : 'Set from Video'}
             </button>
           </div>
           <span id="end-time-help" className="sr-only">
