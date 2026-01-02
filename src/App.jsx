@@ -1339,8 +1339,9 @@ function App() {
                 <li>
                   <strong>Set your loop times:</strong>
                   <ul>
-                    <li><strong>Start Time:</strong> Enter the start time in MM:SS format (e.g., "0:46" for 46 seconds, "1:02" for 1 minute 2 seconds)</li>
-                    <li><strong>End Time:</strong> Enter the end time in MM:SS format (e.g., "1:30" for 1 minute 30 seconds)</li>
+                    <li><strong>Start Time:</strong> Enter the start time in MM:SS format (e.g., "0:46" for 46 seconds, "1:02" for 1 minute 2 seconds), or {isMobile ? 'tap' : 'click'} the "Set" button next to the input to capture the current video playback time as the start time</li>
+                    <li><strong>End Time:</strong> Enter the end time in MM:SS format (e.g., "1:30" for 1 minute 30 seconds), or {isMobile ? 'tap' : 'click'} the "Set" button next to the input to capture the current video playback time as the end time</li>
+                    <li>To use the "Set" buttons: Play the video to the desired time, then {isMobile ? 'tap' : 'click'} the "Set" button to capture that time in the start time or end time.</li>
                   </ul>
                 </li>
                 <li>
@@ -1369,17 +1370,23 @@ function App() {
                     <li>The app automatically saves videos you've loaded in the "Recent" dropdown</li>
                     <li>{isMobile ? 'Tap' : 'Click'} the "Recent" button to see your recently viewed videos</li>
                     <li>{isMobile ? 'Tap' : 'Click'} any video in the recent list to load it instantly</li>
-                    <li>Hover over a video or {isMobile ? 'tap' : 'click'} the red X to remove it from your recent list</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} the red X on any video to remove it from your recent list</li>
+                    {isMobile && (
+                      <li>On mobile, the recent videos list appears as a bottom sheet with improved touch targets</li>
+                    )}
                   </ul>
                 </li>
                 <li>
                   <strong>Save Loops:</strong>
                   <ul>
-                    <li>After setting your start time, end time, target loops, and playback speed, {isMobile ? 'tap' : 'click'} "Save current loop configuration" to save the settings for looping that song again</li>
+                    <li>After setting your start time, end time, and target loops, {isMobile ? 'tap' : 'click'} the "Save Loop" button to save the settings for looping that song again</li>
                     <li>The saved loop will use the video's title and store the settings for the loop</li>
                     <li>Access your saved loops anytime by {isMobile ? 'tapping' : 'clicking'} the "Saved Loops" button</li>
                     <li>{isMobile ? 'Tap' : 'Click'} any saved loop to instantly load the video and restore all the saved settings for the loop</li>
-                    <li>Hover over a saved loop and {isMobile ? 'tap' : 'click'} the red X to delete the loop</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} the red X on any saved loop to delete it</li>
+                    {isMobile && (
+                      <li>On mobile, the saved loops list appears as a bottom sheet with improved touch targets and spacing</li>
+                    )}
                   </ul>
                 </li>
               </ol>
@@ -1396,7 +1403,7 @@ function App() {
               {isMobile && (
                 <div className="help-mobile-note">
                   <p style={{ fontStyle: 'italic', fontSize: '13px', color: '#aaa', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    <strong>Note:</strong> YouTube search, volume control, playback speed slider, loop duration display, and keyboard shortcuts are only included in the Desktop version of this app. The Mobile version does not include these items.
+                    <strong>Note:</strong> YouTube search, volume control, playback speed slider, loop duration display, and keyboard shortcuts are only included in the Desktop version of this app. The Mobile version does not include these items. However, Save Loop, Saved Loops, and Recent Videos functionality is fully available on mobile with optimized touch targets and bottom sheet interfaces.
                   </p>
                 </div>
               )}
@@ -1444,7 +1451,175 @@ function App() {
       </div>
 
       <div className="input-group">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        {/* Mobile buttons row - shown only on mobile */}
+        <div className="mobile-buttons-row">
+          {player && endTime > startTime && (
+            <div className="saved-loops-controls">
+              <button
+                type="button"
+                className="btn-save-loop"
+                onClick={handleSaveLoop}
+                title="Save current loop configuration (start time, end time, target loops)"
+                aria-label="Save current loop configuration"
+              >
+                Save Loop
+              </button>
+            </div>
+          )}
+          {savedLoops.length > 0 && (
+            <div className="saved-loops-wrapper">
+              <button
+                type="button"
+                className="saved-loops-toggle"
+                onClick={() => setShowSavedLoops(!showSavedLoops)}
+                aria-expanded={showSavedLoops}
+                aria-haspopup="true"
+                aria-controls="saved-loops-menu"
+              >
+                Saved Loops ({savedLoops.length})
+              </button>
+              {showSavedLoops && (
+                <>
+                  {/* Backdrop overlay for mobile */}
+                  <div 
+                    className="saved-loops-backdrop"
+                    onClick={() => setShowSavedLoops(false)}
+                    aria-hidden="true"
+                  />
+                  <div 
+                    id="saved-loops-menu"
+                    className="saved-loops-dropdown"
+                    role="menu"
+                    aria-label="Saved loops"
+                  >
+                  {savedLoops.map((loop, index) => (
+                    <button
+                      key={loop.id || index}
+                      type="button"
+                      className="saved-loop-item"
+                      onClick={() => handleLoadSavedLoop(loop)}
+                      role="menuitem"
+                    >
+                      {loop.thumbnail && (
+                        <img 
+                          src={loop.thumbnail} 
+                          alt={loop.title || 'Video thumbnail'}
+                          className="saved-loop-thumbnail"
+                          onError={(e) => {
+                            e.target.style.display = 'none'
+                          }}
+                        />
+                      )}
+                      <div className="saved-loop-info">
+                        <span className="saved-loop-title">{loop.title || `Video ${loop.videoId}`}</span>
+                        {loop.author && (
+                          <span className="saved-loop-author">{loop.author}</span>
+                        )}
+                        <span className="saved-loop-times">
+                          {secondsToMMSS(loop.startTime)} - {secondsToMMSS(loop.endTime)} ({loop.targetLoops} loops)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="delete-button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteSavedLoop(loop.id, loop.title || `Video ${loop.videoId}`)
+                        }}
+                        aria-label={`Delete saved loop: ${loop.title || loop.videoId}`}
+                        title="Delete this saved loop"
+                      >
+                        ×
+                      </button>
+                    </button>
+                  ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {recentVideos.length > 0 && (
+            <div className="recent-videos-wrapper">
+              <button
+                type="button"
+                className="recent-videos-toggle"
+                onClick={() => setShowRecentVideos(!showRecentVideos)}
+                aria-expanded={showRecentVideos}
+                aria-haspopup="true"
+                aria-controls="recent-videos-menu"
+              >
+                Recent ({recentVideos.length})
+              </button>
+            {showRecentVideos && (
+              <>
+                {/* Backdrop overlay for mobile */}
+                <div 
+                  className="recent-videos-backdrop"
+                  onClick={() => setShowRecentVideos(false)}
+                  aria-hidden="true"
+                />
+                <div 
+                  id="recent-videos-menu"
+                  className="recent-videos-dropdown"
+                  role="menu"
+                  aria-label="Recent videos"
+                >
+                {recentVideos.map((video, index) => {
+                  const isDefault = userDefaultVideo && userDefaultVideo.videoId === video.videoId
+                  return (
+                  <button
+                    key={index}
+                    type="button"
+                    className={`recent-video-item ${isDefault ? 'is-default' : ''}`}
+                    onClick={() => handleRecentVideoSelect(video)}
+                    role="menuitem"
+                  >
+                    {video.thumbnail && (
+                      <img 
+                        src={video.thumbnail} 
+                        alt={video.title || 'Video thumbnail'}
+                        className="recent-video-thumbnail"
+                        onError={(e) => {
+                          // Fallback to default thumbnail if image fails to load
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    )}
+                    <div className="recent-video-info">
+                      <span className="recent-video-title">{video.title || `Video ${video.videoId}`}</span>
+                      {video.author && (
+                        <span className="recent-video-author">{video.author}</span>
+                      )}
+                      {!video.author && (
+                        <span className="recent-video-id">{video.videoId}</span>
+                      )}
+                    </div>
+                    {!isDefault && (
+                      <button
+                        type="button"
+                        className="delete-button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteRecentVideo(video.videoId, video.title || `Video ${video.videoId}`)
+                        }}
+                        aria-label={`Delete recent video: ${video.title || video.videoId}`}
+                        title="Delete this recent video"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </button>
+                  )
+                })}
+                </div>
+              </>
+            )}
+            </div>
+          )}
+        </div>
+        
+        {/* Desktop layout - label and buttons side by side */}
+        <div className="desktop-label-buttons" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <label htmlFor="video-id">URL or Video ID of song from YouTube</label>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <div className="default-video-controls">
@@ -1486,12 +1661,19 @@ function App() {
                   ⭐ Saved Loops ({savedLoops.length})
                 </button>
                 {showSavedLoops && (
-                  <div 
-                    id="saved-loops-menu"
-                    className="saved-loops-dropdown"
-                    role="menu"
-                    aria-label="Saved loops"
-                  >
+                  <>
+                    {/* Backdrop overlay for mobile */}
+                    <div 
+                      className="saved-loops-backdrop"
+                      onClick={() => setShowSavedLoops(false)}
+                      aria-hidden="true"
+                    />
+                    <div 
+                      id="saved-loops-menu"
+                      className="saved-loops-dropdown"
+                      role="menu"
+                      aria-label="Saved loops"
+                    >
                     {savedLoops.map((loop, index) => (
                       <button
                         key={loop.id || index}
@@ -1533,7 +1715,8 @@ function App() {
                         </button>
                       </button>
                     ))}
-                  </div>
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -1550,12 +1733,19 @@ function App() {
                   📋 Recent ({recentVideos.length})
                 </button>
               {showRecentVideos && (
-                <div 
-                  id="recent-videos-menu"
-                  className="recent-videos-dropdown"
-                  role="menu"
-                  aria-label="Recent videos"
-                >
+                <>
+                  {/* Backdrop overlay for mobile */}
+                  <div 
+                    className="recent-videos-backdrop"
+                    onClick={() => setShowRecentVideos(false)}
+                    aria-hidden="true"
+                  />
+                  <div 
+                    id="recent-videos-menu"
+                    className="recent-videos-dropdown"
+                    role="menu"
+                    aria-label="Recent videos"
+                  >
                   {recentVideos.map((video, index) => {
                     const isDefault = userDefaultVideo && userDefaultVideo.videoId === video.videoId
                     return (
@@ -1603,12 +1793,16 @@ function App() {
                     </button>
                     )
                   })}
-                </div>
+                  </div>
+                </>
               )}
               </div>
             )}
           </div>
         </div>
+        
+        {/* Mobile label - shown only on mobile, below buttons */}
+        <label htmlFor="video-id" className="mobile-label">URL or Video ID of song from YouTube</label>
         <input
           id="video-id"
           type="text"

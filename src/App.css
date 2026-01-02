@@ -957,28 +957,258 @@ input[type="range"]:focus-visible {
 
 /* Hide buttons only on actual mobile phones, not tablets */
 /* iPad Safari reports 768px viewport, so we use a lower breakpoint for phones only */
+/* TESTING: Making these visible on mobile with compact styling */
 @media (max-width: 600px) {
   .default-video-controls {
-    display: none;
+    display: none !important; /* Keep star button hidden on mobile */
   }
   
+  /* Also hide star button if it appears in mobile-buttons-row */
+  .mobile-buttons-row .default-video-controls {
+    display: none !important;
+  }
+  
+  /* Show these controls on mobile with compact styling */
   .recent-videos-wrapper {
-    display: none;
+    display: inline-block;
   }
   
   .saved-loops-controls {
-    display: none;
+    display: inline-block;
   }
   
   .saved-loops-wrapper {
-    display: none;
+    display: inline-block;
   }
+  
+  /* Mobile layout: buttons row, then label, then input */
+  /* Hide desktop label/buttons container on mobile */
+  .desktop-label-buttons {
+    display: none !important;
+  }
+  
+  /* Show mobile buttons row */
+  .mobile-buttons-row {
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+    width: 100%;
+  }
+  
+  /* Show mobile label */
+  .mobile-label {
+    display: block !important;
+    margin-bottom: 0px;
+    color: #fff;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 2px;
+    font-family: 'Oswald', sans-serif;
+  }
+  
+  /* Reduce gap for input-group containing URL input on mobile to match START TIME spacing */
+  .input-group:has(.mobile-label) {
+    gap: 4px !important;
+  }
+  
+  /* Also reduce gap if input-group contains mobile-buttons-row */
+  .input-group:has(.mobile-buttons-row) {
+    gap: 4px !important;
+  }
+  
+  /* Buttons styling for mobile */
+  .mobile-buttons-row .saved-loops-controls {
+    display: inline-block !important;
+    flex: 0.8;
+    min-width: 80px;
+  }
+  
+  .mobile-buttons-row .saved-loops-wrapper {
+    display: inline-block !important;
+    flex: 1.2;
+    min-width: 100px;
+  }
+  
+  .mobile-buttons-row .recent-videos-wrapper {
+    display: inline-block !important;
+    flex: 1;
+    min-width: 100px;
+  }
+  
+  .mobile-buttons-row .btn-save-loop,
+  .mobile-buttons-row .saved-loops-toggle,
+  .mobile-buttons-row .recent-videos-toggle {
+    padding: 8px 10px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    min-height: 36px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .mobile-buttons-row .saved-loops-toggle,
+  .mobile-buttons-row .recent-videos-toggle {
+    font-size: 9px;
+    padding: 8px 8px;
+  }
+  
+  .mobile-buttons-row .btn-save-loop {
+    font-size: 10px;
+  }
+}
+
+/* Desktop: Hide mobile elements, show desktop layout */
+@media (min-width: 601px) {
+  .mobile-buttons-row {
+    display: none !important;
+  }
+  
+  .mobile-label {
+    display: none !important;
+  }
+  
+  .desktop-label-buttons {
+    display: flex !important;
+  }
+}
   
   .recent-videos-dropdown {
     min-width: 100%;
     max-width: 100%;
     right: 0;
     left: 0;
+  }
+  
+  /* Backdrop overlay - only on mobile */
+  .saved-loops-backdrop,
+  .recent-videos-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1999;
+    animation: fadeIn 0.2s ease;
+  }
+  
+  /* Hide backdrop on desktop */
+  @media (min-width: 601px) {
+    .saved-loops-backdrop,
+    .recent-videos-backdrop {
+      display: none !important;
+    }
+  }
+  
+  .saved-loops-dropdown {
+    min-width: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    right: 0 !important;
+    left: 0 !important;
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    max-height: 60vh !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    z-index: 2000 !important;
+  }
+  
+  /* Improved spacing and touch targets for mobile */
+  .saved-loops-dropdown .saved-loop-item {
+    min-height: 80px !important;
+    padding: 16px 20px !important;
+    gap: 16px !important;
+    border-bottom: 2px solid #333 !important;
+  }
+  
+  .saved-loops-dropdown .saved-loop-thumbnail {
+    width: 100px !important;
+    height: 75px !important;
+  }
+  
+  .saved-loops-dropdown .saved-loop-info {
+    gap: 6px !important;
+  }
+  
+  .saved-loops-dropdown .saved-loop-title {
+    font-size: 16px !important;
+    line-height: 1.3 !important;
+  }
+  
+  .saved-loops-dropdown .saved-loop-author {
+    font-size: 13px !important;
+  }
+  
+  .saved-loops-dropdown .saved-loop-times {
+    font-size: 13px !important;
+  }
+  
+  .saved-loops-dropdown .delete-button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 24px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* Improved spacing and touch targets for recent videos dropdown on mobile - matching saved loops */
+  .recent-videos-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    max-height: 60vh !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    z-index: 2000 !important;
+  }
+  
+  .recent-videos-dropdown .recent-video-item {
+    min-height: 80px !important;
+    padding: 16px 20px !important;
+    gap: 16px !important;
+    border-bottom: 2px solid #333 !important;
+  }
+  
+  .recent-videos-dropdown .recent-video-thumbnail {
+    width: 100px !important;
+    height: 75px !important;
+  }
+  
+  .recent-videos-dropdown .recent-video-info {
+    gap: 6px !important;
+  }
+  
+  .recent-videos-dropdown .recent-video-title {
+    font-size: 16px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  .recent-videos-dropdown .recent-video-author {
+    font-size: 13px !important;
+  }
+  
+  .recent-videos-dropdown .delete-button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 24px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
   
   .recent-video-thumbnail {
@@ -1945,7 +2175,7 @@ input[type="range"]:focus-visible {
   .buttons-row {
     flex-direction: column;
     gap: 12px;
-    margin-top: 4px;
+    margin-top: 0px;
   }
   
   .button-row-wrapper {
