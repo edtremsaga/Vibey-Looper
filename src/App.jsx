@@ -1567,34 +1567,33 @@ function App() {
                 {recentVideos.map((video, index) => {
                   const isDefault = userDefaultVideo && userDefaultVideo.videoId === video.videoId
                   return (
-                  <button
-                    key={index}
-                    type="button"
-                    className={`recent-video-item ${isDefault ? 'is-default' : ''}`}
-                    onClick={() => handleRecentVideoSelect(video)}
-                    role="menuitem"
-                  >
-                    {video.thumbnail && (
-                      <img 
-                        src={video.thumbnail} 
-                        alt={video.title || 'Video thumbnail'}
-                        className="recent-video-thumbnail"
-                        onError={(e) => {
-                          // Fallback to default thumbnail if image fails to load
-                          e.target.style.display = 'none'
-                        }}
-                      />
-                    )}
-                    <div className="recent-video-info">
-                      <span className="recent-video-title">{video.title || `Video ${video.videoId}`}</span>
-                      {video.author && (
-                        <span className="recent-video-author">{video.author}</span>
+                    <button
+                      key={index}
+                      type="button"
+                      className={`recent-video-item ${isDefault ? 'is-default' : ''}`}
+                      onClick={() => handleRecentVideoSelect(video)}
+                      role="menuitem"
+                    >
+                      {video.thumbnail && (
+                        <img 
+                          src={video.thumbnail} 
+                          alt={video.title || 'Video thumbnail'}
+                          className="recent-video-thumbnail"
+                          onError={(e) => {
+                            // Fallback to default thumbnail if image fails to load
+                            e.target.style.display = 'none'
+                          }}
+                        />
                       )}
-                      {!video.author && (
-                        <span className="recent-video-id">{video.videoId}</span>
-                      )}
-                    </div>
-                    {!isDefault && (
+                      <div className="recent-video-info">
+                        <span className="recent-video-title">{video.title || `Video ${video.videoId}`}</span>
+                        {video.author && (
+                          <span className="recent-video-author">{video.author}</span>
+                        )}
+                        {!video.author && (
+                          <span className="recent-video-id">{video.videoId}</span>
+                        )}
+                      </div>
                       <button
                         type="button"
                         className="delete-button"
@@ -1607,8 +1606,7 @@ function App() {
                       >
                         ×
                       </button>
-                    )}
-                  </button>
+                    </button>
                   )
                 })}
                 </div>
@@ -1776,20 +1774,18 @@ function App() {
                           <span className="recent-video-id">{video.videoId}</span>
                         )}
                       </div>
-                      {!isDefault && (
-                        <button
-                          type="button"
-                          className="delete-button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteRecentVideo(video.videoId, video.title || `Video ${video.videoId}`)
-                          }}
-                          aria-label={`Delete recent video: ${video.title || video.videoId}`}
-                          title="Delete this recent video"
-                        >
-                          ×
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className="delete-button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteRecentVideo(video.videoId, video.title || `Video ${video.videoId}`)
+                        }}
+                        aria-label={`Delete recent video: ${video.title || video.videoId}`}
+                        title="Delete this recent video"
+                      >
+                        ×
+                      </button>
                     </button>
                     )
                   })}

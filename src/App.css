@@ -512,6 +512,7 @@ input[type="range"]:focus-visible {
   cursor: pointer;
   transition: all 0.2s;
   font-family: 'Roboto Condensed', sans-serif;
+  position: relative;
 }
 
 .recent-video-item:last-child {
@@ -1058,23 +1059,8 @@ input[type="range"]:focus-visible {
   .mobile-buttons-row .btn-save-loop {
     font-size: 10px;
   }
-}
-
-/* Desktop: Hide mobile elements, show desktop layout */
-@media (min-width: 601px) {
-  .mobile-buttons-row {
-    display: none !important;
-  }
   
-  .mobile-label {
-    display: none !important;
-  }
-  
-  .desktop-label-buttons {
-    display: flex !important;
-  }
-}
-  
+  /* Mobile dropdown styles */
   .recent-videos-dropdown {
     min-width: 100%;
     max-width: 100%;
@@ -1093,14 +1079,6 @@ input[type="range"]:focus-visible {
     background: rgba(0, 0, 0, 0.7);
     z-index: 1999;
     animation: fadeIn 0.2s ease;
-  }
-  
-  /* Hide backdrop on desktop */
-  @media (min-width: 601px) {
-    .saved-loops-backdrop,
-    .recent-videos-backdrop {
-      display: none !important;
-    }
   }
   
   .saved-loops-dropdown {
@@ -1123,8 +1101,10 @@ input[type="range"]:focus-visible {
   .saved-loops-dropdown .saved-loop-item {
     min-height: 80px !important;
     padding: 16px 20px !important;
+    padding-right: 70px !important; /* Make room for delete button */
     gap: 16px !important;
     border-bottom: 2px solid #333 !important;
+    position: relative !important;
   }
   
   .saved-loops-dropdown .saved-loop-thumbnail {
@@ -1159,6 +1139,12 @@ input[type="range"]:focus-visible {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    opacity: 1 !important;
+    z-index: 10 !important;
   }
   
   /* Improved spacing and touch targets for recent videos dropdown on mobile - matching saved loops */
@@ -1176,8 +1162,11 @@ input[type="range"]:focus-visible {
   .recent-videos-dropdown .recent-video-item {
     min-height: 80px !important;
     padding: 16px 20px !important;
+    padding-right: 70px !important; /* Make room for delete button */
     gap: 16px !important;
     border-bottom: 2px solid #333 !important;
+    position: relative !important;
+    overflow: visible !important;
   }
   
   .recent-videos-dropdown .recent-video-thumbnail {
@@ -1209,7 +1198,56 @@ input[type="range"]:focus-visible {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+    visibility: visible !important;
+    background: #000 !important;
+    border: 2px solid #ff0000 !important;
+    color: #ff0000 !important;
   }
+}
+
+/* Desktop: Hide mobile elements, show desktop layout */
+@media (min-width: 601px) {
+  .mobile-buttons-row {
+    display: none !important;
+  }
+  
+  .mobile-label {
+    display: none !important;
+  }
+  
+  .desktop-label-buttons {
+    display: flex !important;
+  }
+  
+  /* Hide backdrop on desktop */
+  .saved-loops-backdrop,
+  .recent-videos-backdrop {
+    display: none !important;
+  }
+  
+  /* Ensure desktop dropdown styles override mobile */
+  .recent-videos-dropdown {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    bottom: auto !important;
+    width: 600px !important;
+    min-width: 600px !important;
+    max-width: 800px !important;
+    max-height: 400px !important;
+    border: 3px solid #fff !important;
+    border-left: 3px solid #fff !important;
+    border-right: 3px solid #fff !important;
+    border-bottom: 3px solid #fff !important;
+    box-shadow: 4px 4px 0px #ff0000 !important;
+    z-index: 1000 !important;
+  }
+}
   
   .recent-video-thumbnail {
     width: 60px;
