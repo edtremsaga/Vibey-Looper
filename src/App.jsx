@@ -1799,20 +1799,33 @@ function App() {
         
         {/* Mobile label - shown only on mobile, below buttons */}
         <label htmlFor="video-id" className="mobile-label">URL or Video ID of song from YouTube</label>
-        <input
-          id="video-id"
-          type="text"
-          value={videoId}
-          onChange={(e) => handleVideoIdChange(e.target.value)}
-          onKeyDown={(e) => handleInputKeyDown(e, setVideoId)}
-          onFocus={() => setShowRecentVideos(false)}
-          placeholder="Enter URL or Video ID of song from YouTube"
-          disabled={!apiReady}
-          autoFocus
-          aria-invalid={!!validationError}
-          aria-describedby={validationError ? "video-id-error" : undefined}
-          aria-errormessage={validationError ? "video-id-error" : undefined}
-        />
+        <div className="video-id-input-wrapper">
+          <input
+            id="video-id"
+            type="text"
+            value={videoId}
+            onChange={(e) => handleVideoIdChange(e.target.value)}
+            onKeyDown={(e) => handleInputKeyDown(e, setVideoId)}
+            onFocus={() => setShowRecentVideos(false)}
+            placeholder="Enter URL or Video ID of song from YouTube"
+            disabled={!apiReady}
+            autoFocus
+            aria-invalid={!!validationError}
+            aria-describedby={validationError ? "video-id-error" : undefined}
+            aria-errormessage={validationError ? "video-id-error" : undefined}
+          />
+          {videoId && (
+            <button
+              type="button"
+              className="clear-input-button"
+              onClick={() => handleVideoIdChange('')}
+              aria-label="Clear URL input"
+              title="Clear URL"
+            >
+              ×
+            </button>
+          )}
+        </div>
         {isLoading && (
           <div 
             className="loading-indicator"

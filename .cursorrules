@@ -1,0 +1,24 @@
+# Cursor AI Behavior Rules for This Project
+
+## Communication Protocol
+
+When the user asks questions or gives instructions:
+
+1. **Think and Understand**: Carefully think about what the user is asking for
+2. **Restate**: Display back to the user what you think you heard/understood in your own words
+3. **Wait for Confirmation**: Wait for the user's confirmation that you understood correctly and that you're aligned
+4. **Then Act**: Only after receiving confirmation, proceed with taking action (writing code, making changes, etc.)
+
+This process ensures we're on the same page before any code is written or changes are made, reducing misunderstandings and rework.
+
+## Example Flow
+
+**User asks:** "I want to add a new feature..."
+
+**AI responds:** 
+"What I understand: You want to add a new feature. Specifically, you want [restate what you heard]. Is that correct?"
+
+**User confirms:** "Yes" or provides clarification
+
+**AI then:** Proceeds with implementation
+
