@@ -21,6 +21,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
   const playerRef = useRef(null)
   const playerInitializedRef = useRef(false)
   const countdownIntervalRef = useRef(null)
+  const playSongAtIndexRef = useRef(null)
 
   // Load saved loops and set list on mount
   useEffect(() => {
@@ -125,6 +126,11 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
     }
   }, [setList, player, apiReady])
 
+  // Update playSongAtIndex ref whenever the function changes
+  useEffect(() => {
+    playSongAtIndexRef.current = playSongAtIndex
+  }, [playSongAtIndex])
+
   // Handle video end - start countdown or show completion
   const handleVideoEnd = useCallback(() => {
     setCurrentSongIndex((prevIndex) => {
@@ -148,7 +154,9 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
             clearInterval(countdownIntervalRef.current)
             countdownIntervalRef.current = null
             setCountdown(null)
-            playSongAtIndex(prevIndex + 1)
+            if (playSongAtIndexRef.current) {
+              playSongAtIndexRef.current(prevIndex + 1)
+            }
           }
         }, 1000)
       } else {
@@ -167,7 +175,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
       }
       return prevIndex
     })
-  }, [setList.length, playSongAtIndex])
+  }, [setList.length])
 
   // Handle drag end
   const handleDragEnd = (result) => {
