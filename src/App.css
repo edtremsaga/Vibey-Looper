@@ -2346,3 +2346,222 @@ input[type="range"]:focus-visible {
     font-size: 28px;
   }
 }
+
+/* Set List Page Styles */
+
+/* Set List link below status */
+.set-list-link-bottom {
+  margin-top: 5px;
+  margin-bottom: -15px;
+}
+
+.set-list-link-bottom .help-link-text {
+  font-size: 11px;
+  color: #666;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-transform: lowercase;
+}
+
+.set-list-link-bottom .help-link-text:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* Two column layout */
+.set-list-container {
+  display: grid;
+  grid-template-columns: calc(50% - 3px) calc(50% - 3px);
+  gap: 6px;
+  width: 100%;
+  max-width: calc(100% - 4px);
+  margin-top: 20px;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.set-list-column {
+  min-height: 200px;
+  max-height: 500px;
+  padding: 5px;
+  background: #000;
+  border: 2px solid #fff;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.set-list-column.drag-over {
+  background: rgba(255, 0, 0, 0.1);
+  border-color: #ff0000;
+}
+
+.set-list-column-title {
+  color: #fff;
+  font-size: 16px;
+  margin-bottom: 10px;
+  text-transform: lowercase;
+}
+
+.set-list-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  margin-bottom: 4px;
+  background: #000;
+  border: 1px solid #333;
+  cursor: grab;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.set-list-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.set-list-item.playing {
+  background: rgba(34, 204, 34, 0.2);
+  border-color: #22cc22;
+}
+
+.set-list-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #666;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.set-list-number-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ff0000;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.set-list-item-thumbnail {
+  width: 40px;
+  height: 30px;
+  border: 1px solid #333;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.set-list-item-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.set-list-item-title {
+  font-size: 11px;
+  color: #fff;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-list-item-author {
+  font-size: 9px;
+  color: #666;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-list-remove-button {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: #000;
+  border: 1px solid #ff0000;
+  color: #ff0000;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.set-list-remove-button:hover {
+  background: #ff0000;
+  color: #fff;
+}
+
+.set-list-empty-state {
+  color: #666;
+  text-align: center;
+  padding: 20px;
+  font-size: 11px;
+}
+
+.set-list-play-button-container {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.set-list-play-button {
+  padding: 6px 24px;
+  font-size: 14px;
+  border-width: 2px;
+  min-width: 180px;
+}
+
+.set-list-countdown {
+  color: #22cc22;
+  text-align: center;
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+.set-list-completion {
+  color: #22cc22;
+  text-align: center;
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+.set-list-error {
+  color: #ff0000;
+  text-align: center;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+/* White border for YouTube player on Set List page */
+.video-container {
+  border: 10px solid #fff !important;
+  box-shadow: 0 0 0 10px #ffffff;
+}
+
+/* Mobile responsive - stack columns */
+@media (max-width: 768px) {
+  .set-list-container {
+    grid-template-columns: 1fr;
+  }
+}

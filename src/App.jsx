@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import './App.css'
 import { secondsToMMSS, mmssToSeconds, normalizeMMSS, extractVideoId, getYouTubeErrorMessage } from './utils/helpers.js'
 import { saveRecentVideo, loadRecentVideos, deleteRecentVideo, saveDefaultVideo, loadDefaultVideo, clearDefaultVideo, saveSavedLoop, loadSavedLoops, deleteSavedLoop } from './utils/storage.js'
+import SetList from './SetList.jsx'
 
 // App default video (fallback)
 const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
@@ -116,6 +117,7 @@ function App() {
   const [savedLoops, setSavedLoops] = useState([])
   const [showSavedLoops, setShowSavedLoops] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null) // { type: 'recent' | 'saved', id: string, title: string }
+  const [showSetListPage, setShowSetListPage] = useState(false)
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -1264,6 +1266,13 @@ function App() {
 
   return (
     <>
+      {showSetListPage ? (
+        <SetList 
+          onBack={() => setShowSetListPage(false)}
+          savedLoops={savedLoops}
+        />
+      ) : (
+        <>
       {/* Skip link for keyboard navigation */}
       <a href="#main-content" className="skip-link">
         Skip to main content
@@ -2196,6 +2205,15 @@ function App() {
         )}
       </div>
 
+      {/* Set List control button */}
+      {!isMobile && (
+        <div className="set-list-link-bottom">
+          <button className="help-link-text" onClick={() => setShowSetListPage(true)}>
+            set list
+          </button>
+        </div>
+      )}
+
       {/* Help and Feedback links at bottom */}
       <div className="help-link-bottom">
         <button className="help-link-text" onClick={() => setShowHelp(true)}>
@@ -2236,6 +2254,8 @@ function App() {
         </div>
       )}
     </div>
+    </>
+      )}
     </>
   )
 }

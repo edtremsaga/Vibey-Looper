@@ -415,3 +415,54 @@ export const deleteSavedLoop = (loopId) => {
   }
 }
 
+// Helper function to save set list to localStorage
+// Set list is an array of saved loop items (with their full data)
+export const saveSetList = (setList) => {
+  try {
+    // Validate that setList is an array
+    if (!Array.isArray(setList)) {
+      console.warn('Invalid set list data structure')
+      return false
+    }
+    
+    // Validate each item in the set list
+    const validated = setList
+      .map(item => {
+        // Each item should have at least videoId
+        if (!item || typeof item !== 'object' || !item.videoId) {
+          return null
+        }
+        return item
+      })
+      .filter(item => item !== null)
+    
+    localStorage.setItem('setList', JSON.stringify(validated))
+    return true
+  } catch (error) {
+    console.warn('Failed to save set list:', error)
+    return false
+  }
+}
+
+// Helper function to load set list from localStorage
+export const loadSetList = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem('setList') || '[]')
+    
+    // Validate that data is an array
+    if (!Array.isArray(data)) {
+      console.warn('Invalid set list data structure, resetting to empty array')
+      return []
+    }
+    
+    // Filter out invalid entries (must have videoId)
+    const validated = data.filter(item => 
+      item && typeof item === 'object' && item.videoId
+    )
+    
+    return validated
+  } catch (error) {
+    console.warn('Failed to load set list:', error)
+    return []
+  }
+}
