@@ -2408,8 +2408,7 @@ input[type="range"]:focus-visible {
 .set-list-column-title {
   color: #fff;
   font-size: 16px;
-  margin-bottom: 10px;
-  text-transform: lowercase;
+  margin-bottom: 5px;
 }
 
 .set-list-item {
@@ -2518,12 +2517,12 @@ input[type="range"]:focus-visible {
   color: #666;
   text-align: center;
   padding: 20px;
-  font-size: 11px;
+  font-size: 22px;
 }
 
 .set-list-play-button-container {
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 10px;
+  margin-bottom: 10px;
   width: 100%;
   display: flex;
   justify-content: center;

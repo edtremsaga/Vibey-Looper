@@ -296,8 +296,8 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
 
   return (
     <div className="app">
-      {/* Back button */}
-      <div style={{ width: '100%', marginBottom: '20px' }}>
+      {/* Back button and title row */}
+      <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0px', flexWrap: 'wrap', gap: '12px' }}>
         <button 
           className="help-link-text" 
           onClick={onBack} 
@@ -306,7 +306,13 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
         >
           ← back
         </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginRight: 'auto', marginLeft: 'auto' }}>
+          <h1 className="title" style={{ margin: 0, fontSize: '22px' }}>Music Looper</h1>
+          <span className="title-byline">by Vibey Craft</span>
+        </div>
+        <div style={{ width: '100px' }}></div>
       </div>
+      <p className="subtitle" style={{ marginTop: '0px', marginBottom: '10px' }}>Create & play a set list from your saved loops</p>
 
       {/* YouTube player container */}
       <div className="video-container">
@@ -357,7 +363,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
           {/* Left column - Saved loops */}
           <div>
             <h2 className="set-list-column-title">
-              saved set list items
+              Saved Loops
             </h2>
             <Droppable droppableId="saved-loops">
               {(provided, snapshot) => (
@@ -419,7 +425,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
           {/* Right column - Set list */}
           <div>
             <h2 className="set-list-column-title">
-              Set list
+              Set List
             </h2>
             <Droppable droppableId="set-list">
               {(provided, snapshot) => (
