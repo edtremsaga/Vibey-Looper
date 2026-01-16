@@ -34,6 +34,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
   const playSongAtIndexRef = useRef(null)
   const savedSetListsDropdownRef = useRef(null)
   const savedSetListsButtonRef = useRef(null)
+  const setListContainerRef = useRef(null)
 
   // Load saved loops and set list on mount
   useEffect(() => {
@@ -81,14 +82,41 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
         setShowSavedSetListsDropdown(false)
         setShowSaveModal(false)
         setDeleteConfirmId(null)
-        // Clicking on the container area might help clear drag state
-        // The DragDropContext should handle cleanup automatically
+        
+        // Force clear drag state by triggering a state update
+        // This helps clear any stuck drag states from the drag-and-drop library
+        console.log('[ESC] Clearing drag state')
+        setSetList([...setList]) // Force re-render to clear drag states
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [setList])
+
+  // Click-outside handler to clear drag state when clicking outside draggable items
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Only handle if clicking outside draggable items in the set list container
+      if (setListContainerRef.current && 
+          !setListContainerRef.current.contains(event.target)) {
+        // If clicked outside, check if we should clear drag state
+        // This helps clear stuck drag states when user clicks outside the drag area
+        const isDraggableItem = event.target.closest('.set-list-item') || 
+                                event.target.closest('[data-rbd-draggable-id]') ||
+                                event.target.closest('[data-rbd-droppable-id]')
+        
+        if (!isDraggableItem) {
+          // Clicked outside draggable area - force clear drag state
+          console.log('[Click Outside] Clearing drag state')
+          setSetList([...setList]) // Force re-render to clear drag states
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [setList])
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -618,7 +646,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
 
       {/* Two column layout */}
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="set-list-container">
+        <div ref={setListContainerRef} className="set-list-container">
           {/* Left column - Saved loops */}
           <div>
             <h2 className="set-list-column-title">

@@ -2540,7 +2540,8 @@ input[type="range"]:focus-visible {
 .set-list-countdown {
   color: #22cc22;
   text-align: center;
-  font-size: 18px;
+  font-size: 28px;
+  font-weight: bold;
   margin-top: 10px;
 }
 
