@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import './App.css'
 import { extractVideoId } from './utils/helpers.js'
-import { loadSavedLoops, saveSetList, loadSetList } from './utils/storage.js'
+import { loadSavedLoops, saveSetList, loadSetList, saveSavedSetList, loadSavedSetLists, deleteSavedSetList, updateSavedSetList } from './utils/storage.js'
 
 function SetList({ onBack, savedLoops: savedLoopsProp }) {
   // State management
@@ -17,11 +17,23 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
   const [completionMessage, setCompletionMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   
+  // Save Set List feature state
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [setListName, setSetListName] = useState('')
+  const [saveModalError, setSaveModalError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  const [savedSetLists, setSavedSetLists] = useState([])
+  const [showSavedSetListsDropdown, setShowSavedSetListsDropdown] = useState(false)
+  const [loadedSetListId, setLoadedSetListId] = useState(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  
   // Refs
   const playerRef = useRef(null)
   const playerInitializedRef = useRef(false)
   const countdownIntervalRef = useRef(null)
   const playSongAtIndexRef = useRef(null)
+  const savedSetListsDropdownRef = useRef(null)
+  const savedSetListsButtonRef = useRef(null)
 
   // Load saved loops and set list on mount
   useEffect(() => {
@@ -36,6 +48,46 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
   useEffect(() => {
     saveSetList(setList)
   }, [setList])
+
+  // Load saved set lists on mount
+  useEffect(() => {
+    const loaded = loadSavedSetLists()
+    setSavedSetLists(loaded)
+  }, [])
+
+  // Close saved set lists dropdown when clicking outside
+  useEffect(() => {
+    if (!showSavedSetListsDropdown) return
+
+    const handleClickOutside = (event) => {
+      if (savedSetListsDropdownRef.current && 
+          savedSetListsButtonRef.current &&
+          !savedSetListsDropdownRef.current.contains(event.target) &&
+          !savedSetListsButtonRef.current.contains(event.target)) {
+        setShowSavedSetListsDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showSavedSetListsDropdown])
+
+  // Handle ESC key to close modals/dropdowns and help reset drag state
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        // Close any open dropdowns/modals
+        setShowSavedSetListsDropdown(false)
+        setShowSaveModal(false)
+        setDeleteConfirmId(null)
+        // Clicking on the container area might help clear drag state
+        // The DragDropContext should handle cleanup automatically
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -181,6 +233,10 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
   const handleDragEnd = (result) => {
     const { source, destination, draggableId } = result
     
+    // Clear any error messages
+    setErrorMessage('')
+    
+    // If no destination (drag cancelled), just return - DragDropContext handles cleanup
     if (!destination) {
       return
     }
@@ -282,6 +338,113 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
     setErrorMessage('')
   }
 
+  // Save Set List handlers
+  const handleOpenSaveModal = () => {
+    if (setList.length === 0) {
+      setErrorMessage('Set list is empty. Add songs to the set list before saving.')
+      return
+    }
+    setSetListName('')
+    setSaveModalError('')
+    setShowSaveModal(true)
+  }
+
+  const handleCloseSaveModal = () => {
+    setShowSaveModal(false)
+    setSetListName('')
+    setSaveModalError('')
+  }
+
+  const handleSaveSetList = () => {
+    // Validate name
+    const trimmedName = setListName.trim()
+    if (!trimmedName) {
+      setSaveModalError('Set list name cannot be empty.')
+      return
+    }
+
+    if (trimmedName.length > 50) {
+      setSaveModalError('Set list name cannot exceed 50 characters.')
+      return
+    }
+
+    // Check for duplicate name (unless it's the currently loaded set list)
+    const existing = savedSetLists.find(list => 
+      list.name.toLowerCase() === trimmedName.toLowerCase() && 
+      list.id !== loadedSetListId
+    )
+    
+    if (existing) {
+      setSaveModalError('A set list with this name already exists. Please choose a different name.')
+      return
+    }
+
+    // Save or update
+    let saved
+    if (loadedSetListId) {
+      // Update existing
+      saved = updateSavedSetList(loadedSetListId, trimmedName, setList)
+    } else {
+      // Create new
+      saved = saveSavedSetList(trimmedName, setList)
+    }
+
+    if (saved) {
+      // Reload saved set lists
+      const updated = loadSavedSetLists()
+      setSavedSetLists(updated)
+      
+      // Track the loaded set list ID
+      setLoadedSetListId(saved.id)
+      
+      // Close modal and show success
+      handleCloseSaveModal()
+      setSuccessMessage(`Set list '${trimmedName}' saved successfully`)
+      setTimeout(() => {
+        setSuccessMessage('')
+      }, 3000)
+    } else {
+      setSaveModalError('Failed to save set list. Please try again.')
+    }
+  }
+
+  const handleToggleSavedSetListsDropdown = () => {
+    if (isPlaying) {
+      return // Don't allow during playback
+    }
+    setShowSavedSetListsDropdown(!showSavedSetListsDropdown)
+  }
+
+  const handleLoadSavedSetList = (savedSetList) => {
+    setSetList(savedSetList.songs)
+    setLoadedSetListId(savedSetList.id)
+    setShowSavedSetListsDropdown(false)
+    setErrorMessage('')
+  }
+
+  const handleDeleteSavedSetList = (id, e) => {
+    e.stopPropagation()
+    setDeleteConfirmId(id)
+  }
+
+  const handleConfirmDelete = () => {
+    if (deleteConfirmId) {
+      const updated = deleteSavedSetList(deleteConfirmId)
+      setSavedSetLists(updated)
+      
+      // If deleted set list was currently loaded, clear the loaded ID but keep the set list
+      if (deleteConfirmId === loadedSetListId) {
+        setLoadedSetListId(null)
+      }
+      
+      setDeleteConfirmId(null)
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmId(null)
+  }
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -346,7 +509,14 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
         </div>
       )}
 
-      {/* Play Set list button */}
+      {/* Success message */}
+      {successMessage && (
+        <div className="set-list-success-message" style={{ color: '#22cc22', textAlign: 'center', marginBottom: '10px' }}>
+          {successMessage}
+        </div>
+      )}
+
+      {/* Play Set list, Save Set list, and Saved Set Lists buttons */}
       <div className="set-list-play-button-container">
         <button
           className="btn btn-start set-list-play-button"
@@ -355,6 +525,55 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
         >
           {isPlaying ? 'Stop Set List' : 'Play Set List'}
         </button>
+        <button
+          className="btn btn-start set-list-play-button"
+          onClick={handleOpenSaveModal}
+          disabled={setList.length === 0}
+        >
+          Save Set List
+        </button>
+        <div style={{ position: 'relative' }}>
+          <button
+            ref={savedSetListsButtonRef}
+            className="btn btn-start set-list-play-button"
+            onClick={handleToggleSavedSetListsDropdown}
+            disabled={isPlaying}
+            style={{ opacity: isPlaying ? 0.5 : 1, cursor: isPlaying ? 'not-allowed' : 'pointer' }}
+          >
+            Saved Set Lists
+          </button>
+          {showSavedSetListsDropdown && (
+            <div ref={savedSetListsDropdownRef} className="saved-set-lists-dropdown">
+              {savedSetLists.length === 0 ? (
+                <div className="saved-set-list-item" style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                  No saved set lists
+                </div>
+              ) : (
+                savedSetLists.map((savedSetList) => (
+                  <div
+                    key={savedSetList.id}
+                    className="saved-set-list-item"
+                    onClick={() => handleLoadSavedSetList(savedSetList)}
+                    style={{ cursor: 'pointer', position: 'relative', paddingRight: '40px' }}
+                  >
+                    <div>{savedSetList.name}</div>
+                    <div style={{ fontSize: '12px', color: '#999' }}>
+                      {savedSetList.songs.length} {savedSetList.songs.length === 1 ? 'song' : 'songs'}
+                    </div>
+                    <button
+                      className="delete-button"
+                      onClick={(e) => handleDeleteSavedSetList(savedSetList.id, e)}
+                      style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                      title="Delete saved set list"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Two column layout */}
@@ -501,6 +720,107 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
           </div>
         </div>
       </DragDropContext>
+
+      {/* Save Set List Modal */}
+      {showSaveModal && (
+        <div className="help-modal-overlay" onClick={handleCloseSaveModal}>
+          <div className="help-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="help-modal-header">
+              <h2>Save Set List</h2>
+              <button 
+                className="help-modal-close"
+                onClick={handleCloseSaveModal}
+                aria-label="Close modal"
+              >
+                ×
+              </button>
+            </div>
+            <div className="help-modal-content">
+              <label htmlFor="set-list-name-input" style={{ display: 'block', marginBottom: '10px' }}>
+                Set List Name:
+              </label>
+              <input
+                id="set-list-name-input"
+                type="text"
+                value={setListName}
+                onChange={(e) => {
+                  setSetListName(e.target.value)
+                  setSaveModalError('')
+                }}
+                maxLength={50}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  background: '#000',
+                  border: '2px solid #fff',
+                  color: '#fff',
+                  fontSize: '16px',
+                  marginBottom: '10px'
+                }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveSetList()
+                  } else if (e.key === 'Escape') {
+                    handleCloseSaveModal()
+                  }
+                }}
+              />
+              {saveModalError && (
+                <div style={{ color: '#ff0000', marginBottom: '10px', fontSize: '14px' }}>
+                  {saveModalError}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  className="btn"
+                  onClick={handleCloseSaveModal}
+                  style={{ padding: '8px 16px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-start"
+                  onClick={handleSaveSetList}
+                  style={{ padding: '8px 16px' }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmId && (
+        <div className="help-modal-overlay" onClick={handleCancelDelete}>
+          <div className="help-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="help-modal-header">
+              <h2>Delete Set List</h2>
+            </div>
+            <div className="help-modal-content">
+              <p>Are you sure you want to delete this saved set list?</p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+                <button
+                  className="btn"
+                  onClick={handleCancelDelete}
+                  style={{ padding: '8px 16px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn"
+                  onClick={handleConfirmDelete}
+                  style={{ padding: '8px 16px', background: '#ff0000', borderColor: '#ff0000' }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

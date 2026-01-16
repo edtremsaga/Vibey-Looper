@@ -466,3 +466,211 @@ export const loadSetList = () => {
     return []
   }
 }
+
+// Security: Validate saved set list data structure to prevent data poisoning
+const validateSavedSetList = (savedSetList) => {
+  // Basic structure check
+  if (!savedSetList || typeof savedSetList !== 'object') {
+    return null
+  }
+  
+  // ID is required
+  if (!savedSetList.id || typeof savedSetList.id !== 'string' || savedSetList.id.trim() === '') {
+    return null
+  }
+  
+  // Name is required and must be valid
+  if (!savedSetList.name || typeof savedSetList.name !== 'string' || savedSetList.name.trim() === '') {
+    return null
+  }
+  
+  // Songs must be an array
+  if (!Array.isArray(savedSetList.songs)) {
+    return null
+  }
+  
+  // Validate each song in the array
+  const validatedSongs = savedSetList.songs
+    .map(song => {
+      if (!song || typeof song !== 'object' || !song.videoId) {
+        return null
+      }
+      // Validate videoId format
+      if (typeof song.videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(song.videoId)) {
+        return null
+      }
+      return song
+    })
+    .filter(song => song !== null)
+  
+  // Return validated and sanitized saved set list object
+  return {
+    id: savedSetList.id.substring(0, 100), // Sanitize ID length
+    name: savedSetList.name.trim().substring(0, 50), // Sanitize name (max 50 chars)
+    songs: validatedSongs,
+    createdAt: typeof savedSetList.createdAt === 'number' && savedSetList.createdAt > 0
+      ? savedSetList.createdAt
+      : Date.now() // Default to current time if invalid
+  }
+}
+
+// Helper function to save a named set list to localStorage
+// Security: Validates inputs before saving to prevent invalid data storage
+export const saveSavedSetList = (name, songs) => {
+  try {
+    // Validate name
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      console.warn('Invalid name provided to saveSavedSetList')
+      return null
+    }
+    
+    // Validate and sanitize name (max 50 characters)
+    const sanitizedName = name.trim().substring(0, 50)
+    
+    // Validate songs array
+    if (!Array.isArray(songs) || songs.length === 0) {
+      console.warn('Invalid or empty songs array provided to saveSavedSetList')
+      return null
+    }
+    
+    // Validate each song has required fields
+    const validatedSongs = songs.filter(song => 
+      song && typeof song === 'object' && song.videoId
+    )
+    
+    if (validatedSongs.length === 0) {
+      console.warn('No valid songs in array provided to saveSavedSetList')
+      return null
+    }
+    
+    // Create saved set list object
+    const savedSetList = {
+      id: `setlist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Unique ID
+      name: sanitizedName,
+      songs: validatedSongs,
+      createdAt: Date.now()
+    }
+    
+    // Load existing saved set lists
+    const savedSetLists = JSON.parse(localStorage.getItem('savedSetLists') || '[]')
+    
+    // Add new set list to the beginning (most recent first)
+    const newSavedSetLists = [savedSetList, ...savedSetLists].slice(0, 100) // Keep max 100 saved set lists
+    
+    localStorage.setItem('savedSetLists', JSON.stringify(newSavedSetLists))
+    return savedSetList
+  } catch (error) {
+    console.warn('Failed to save saved set list:', error)
+    return null
+  }
+}
+
+// Helper function to update an existing saved set list
+export const updateSavedSetList = (id, name, songs) => {
+  try {
+    // Validate inputs (same as saveSavedSetList)
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+      console.warn('Invalid id provided to updateSavedSetList')
+      return null
+    }
+    
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      console.warn('Invalid name provided to updateSavedSetList')
+      return null
+    }
+    
+    const sanitizedName = name.trim().substring(0, 50)
+    
+    if (!Array.isArray(songs) || songs.length === 0) {
+      console.warn('Invalid or empty songs array provided to updateSavedSetList')
+      return null
+    }
+    
+    const validatedSongs = songs.filter(song => 
+      song && typeof song === 'object' && song.videoId
+    )
+    
+    if (validatedSongs.length === 0) {
+      console.warn('No valid songs in array provided to updateSavedSetList')
+      return null
+    }
+    
+    // Load existing saved set lists
+    const savedSetLists = JSON.parse(localStorage.getItem('savedSetLists') || '[]')
+    
+    // Find and update the set list
+    const updatedSetLists = savedSetLists.map(setList => {
+      if (setList.id === id) {
+        return {
+          ...setList,
+          name: sanitizedName,
+          songs: validatedSongs,
+          createdAt: setList.createdAt // Keep original creation time
+        }
+      }
+      return setList
+    })
+    
+    // Check if set list was found
+    const found = savedSetLists.some(setList => setList.id === id)
+    if (!found) {
+      console.warn('Set list with id not found:', id)
+      return null
+    }
+    
+    localStorage.setItem('savedSetLists', JSON.stringify(updatedSetLists))
+    return updatedSetLists.find(setList => setList.id === id)
+  } catch (error) {
+    console.warn('Failed to update saved set list:', error)
+    return null
+  }
+}
+
+// Helper function to load saved set lists from localStorage
+// Security: Validates and sanitizes data to prevent data poisoning attacks
+export const loadSavedSetLists = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem('savedSetLists') || '[]')
+    
+    // Validate that data is an array
+    if (!Array.isArray(data)) {
+      console.warn('Invalid saved set lists data structure, resetting to empty array')
+      return []
+    }
+    
+    // Validate and filter out invalid entries
+    const validated = data
+      .map(validateSavedSetList)
+      .filter(setList => setList !== null) // Remove invalid entries
+      .slice(0, 100) // Enforce maximum limit
+    
+    // Log if entries were filtered out (for debugging)
+    if (validated.length < data.length) {
+      console.warn(`Filtered out ${data.length - validated.length} invalid saved set list entries`)
+    }
+    
+    return validated
+  } catch (error) {
+    console.warn('Failed to load saved set lists:', error)
+    return []
+  }
+}
+
+// Helper function to delete a saved set list by ID
+export const deleteSavedSetList = (id) => {
+  try {
+    // Validate id
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+      console.warn('Invalid id provided to deleteSavedSetList')
+      return loadSavedSetLists() // Return current valid state
+    }
+    
+    const savedSetLists = JSON.parse(localStorage.getItem('savedSetLists') || '[]')
+    const filtered = savedSetLists.filter(setList => setList.id !== id)
+    localStorage.setItem('savedSetLists', JSON.stringify(filtered))
+    return filtered
+  } catch (error) {
+    console.warn('Failed to delete saved set list:', error)
+    return loadSavedSetLists() // Return current valid state on error
+  }
+}

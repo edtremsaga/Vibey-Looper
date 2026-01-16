@@ -162,3 +162,218 @@ A new "Set List" page that allows users to create and play a sequence of songs f
 - [ ] Scrollbars appear when lists are long
 - [ ] Visual feedback during drag-and-drop
 - [ ] Layout fits within red border constraints
+
+---
+
+## Save Set List Feature - Requirements
+
+### Overview
+Users can save their current set list with a custom name and later load saved set lists to populate the set list box.
+
+---
+
+## Step 1: Save Set List Button
+
+### Button Location
+- **Position:** Next to "Play Set List" button
+- **Layout:** All three buttons (Play Set List, Save Set List, Saved Set Lists) in the same row
+- **Styling:** Match "Play Set List" button styling
+- **State:** Disabled when set list is empty (same as "Play Set List")
+
+---
+
+## Step 2: Save Set List Modal/Dialog
+
+### Modal Appearance
+- **Type:** Modal/dialog (not browser prompt, not inline input)
+- **Styling:** Match existing help modal styling (black background, red accents)
+- **Components:**
+  - Text input field for set list name
+  - Cancel button
+  - Save button
+
+### Input Validation
+- **Required:** Set list name cannot be empty
+- **Whitespace:** Cannot be empty or whitespace-only
+- **Max Length:** 50 characters
+- **Duplicate Check:** Cannot save with a name that already exists (show error)
+
+### Error Display
+- **Duplicate Name Error:** Display inside the modal, below the input field
+- **Empty Name Error:** Display inside the modal, below the input field
+- **Empty Set List Error:** Show error if trying to save an empty set list
+
+---
+
+## Step 3: Save Functionality
+
+### Data Structure
+- **Storage Location:** localStorage (same as saved loops)
+- **Storage Key:** `'savedSetLists'` (following `'savedLoops'` pattern)
+- **Data Structure:**
+  ```javascript
+  {
+    id: string,           // Unique identifier (timestamp-based or UUID)
+    name: string,         // Set list name entered by user
+    songs: Array,         // Array of song objects matching current setList structure
+                          // { id, videoId, title, author, thumbnail, url }
+    createdAt: timestamp  // Timestamp for sorting/filtering
+  }
+  ```
+
+### Storage Functions
+- **Location:** Add to `src/utils/storage.js`
+- **Functions:**
+  - `saveSavedSetList(setList)` - Save a new set list or update existing
+  - `loadSavedSetLists()` - Load all saved set lists
+  - `deleteSavedSetList(id)` - Delete a saved set list by ID
+- **Pattern:** Follow the same validation pattern as existing saved loops functions
+
+### Save Behavior
+- **Save New:** If name doesn't exist, create new saved set list
+- **Overwrite:** If saving with same name as currently loaded set list, overwrite that saved set list
+- **Duplicate Error:** If name exists and it's NOT the currently loaded set list, show error asking for different name
+- **Empty Set List:** Cannot save empty set list, show error
+
+### After Saving
+- **Modal:** Close modal automatically
+- **Success Message:** Display below the buttons (where error messages currently appear)
+- **Message Text:** "Set list 'Name' saved successfully"
+- **Current Set List:** Keep the current set list visible (don't clear it)
+
+---
+
+## Step 5: Saved Set Lists Button
+
+### Button Location
+- **Position:** Next to "Save Set List" button
+- **Text:** "Saved Set Lists"
+- **Styling:** Match "Save Set List" and "Play Set List" buttons
+- **State:** Always enabled (even if no saved set lists exist)
+
+---
+
+## Step 6: Saved Set Lists Dropdown
+
+### Dropdown Appearance
+- **Type:** Dropdown similar to "Saved Loops" dropdown
+- **Styling:** Match existing "Saved Loops" dropdown styling
+- **Position:** Below "Saved Set Lists" button
+
+### Dropdown Content
+- **Display Format:** Show saved set lists with:
+  - Set list name
+  - Number of songs (e.g., "My Set List (5 songs)")
+- **Empty State:** When no saved set lists exist, show "No saved set lists" message
+- **Delete Button:** Red X button next to each saved set list item to enable deletion
+
+### Interaction
+- **Click Set List:** 
+  - Load the saved set list's songs into the set list box (right column)
+  - Replace the current set list (don't append/merge)
+  - Close dropdown automatically after selection
+  - User can then click "Play Set List" to play those songs
+
+### Delete Functionality
+- **Delete Button:** Red X next to each saved set list in dropdown
+- **Confirmation:** Show confirmation dialog before deleting
+- **Behavior:** If deleted set list is currently loaded, keep the current set list (just remove from saved lists)
+- **State:** After deletion, current set list remains loaded (if it was the deleted one)
+
+---
+
+## Tracking Loaded Set List
+
+### Loaded Set List ID
+- **Purpose:** Track which saved set list is currently loaded
+- **Behavior:**
+  - When user loads a saved set list, store its ID
+  - Keep tracking the same ID even if user manually modifies the set list (adds/removes songs)
+  - This allows overwriting the correct saved set list when saving with the same name
+- **Clear ID:** Clear tracked ID when:
+  - User loads a different saved set list
+  - User starts with an empty set list (not loaded from saved)
+
+---
+
+## Playback Restrictions
+
+### Loading During Playback
+- **Restriction:** User cannot load a different set list while playback is active
+- **Implementation:** Disable "Saved Set Lists" dropdown/button during playback
+- **Visual:** Button should be visually disabled (grayed out) during playback
+
+---
+
+## Mobile Behavior
+
+### Visibility
+- **Feature Availability:** Set list feature (including save/load) is **desktop only**
+- **Set List Link:** Hidden on mobile (already implemented)
+- **Access Prevention:** No additional checks needed if URL is accessed directly on mobile
+
+---
+
+## Technical Implementation Notes
+
+### Storage Pattern
+- Follow existing `src/utils/storage.js` pattern for saved loops
+- Use same validation approach
+- Use same error handling pattern
+
+### Modal Implementation
+- Use similar structure to help modal
+- Match styling (black background, red accents)
+- Ensure accessibility (keyboard navigation, focus management)
+
+### Dropdown Implementation
+- Use similar structure to "Saved Loops" dropdown
+- Match styling and behavior
+- Ensure click-outside-to-close functionality
+
+### State Management
+- Add state for:
+  - Modal open/close
+  - Input value
+  - Error messages (modal errors vs. general errors)
+  - Success messages
+  - Dropdown open/close
+  - Currently loaded set list ID
+  - Saved set lists list
+
+---
+
+## Acceptance Criteria - Save Set List Feature
+
+- [ ] "Save Set List" button appears next to "Play Set List" button
+- [ ] Button is disabled when set list is empty
+- [ ] Clicking button opens modal with name input
+- [ ] Modal has Cancel and Save buttons
+- [ ] Modal styling matches help modal
+- [ ] Input validation: name cannot be empty
+- [ ] Input validation: name cannot be whitespace-only
+- [ ] Input validation: name max length 50 characters
+- [ ] Duplicate name error shows inside modal below input
+- [ ] Empty set list error shows when trying to save empty set list
+- [ ] Saving creates entry in localStorage with correct structure
+- [ ] Saved set lists stored under key 'savedSetLists'
+- [ ] Success message appears below buttons after saving
+- [ ] Modal closes after successful save
+- [ ] Current set list remains visible after saving
+- [ ] "Saved Set Lists" button appears next to "Save Set List" button
+- [ ] Button is always enabled
+- [ ] Clicking button shows dropdown with saved set lists
+- [ ] Each dropdown item shows name and song count
+- [ ] Empty state shows "No saved set lists" message
+- [ ] Red X button appears next to each saved set list
+- [ ] Clicking X shows confirmation dialog
+- [ ] Confirmation deletes the saved set list
+- [ ] Clicking a saved set list loads it into set list box
+- [ ] Loading replaces current set list (doesn't append)
+- [ ] Dropdown closes automatically after selection
+- [ ] Loaded set list ID is tracked
+- [ ] Modifying loaded set list keeps same ID tracked
+- [ ] Saving with same name as loaded set list overwrites it
+- [ ] Saved Set Lists button is disabled during playback
+- [ ] All three buttons display in same row
+- [ ] Feature is desktop only (not visible on mobile)

@@ -1,5 +1,30 @@
 # Cursor AI Behavior Rules for This Project
 
+## CRITICAL: Code Change Protocol - NO EXCEPTIONS
+
+**BEFORE making ANY code changes**, you MUST:
+
+1. **Restate**: Clearly explain what you understand the user wants
+2. **Propose**: Explain exactly what you plan to do (what file, what change, why)
+3. **Ask**: Explicitly ask "Do you want me to proceed with [specific action]?"
+4. **Wait**: Wait for explicit confirmation ("yes", "proceed", "go ahead", etc.)
+5. **Then Act**: Only after receiving explicit confirmation, make the change
+
+**This applies to ALL changes, including but not limited to:**
+- Reading files to understand context (if followed by a change)
+- Writing new code
+- Editing existing code
+- Updating configuration files (package.json, .cursorrules, etc.)
+- Making CSS changes
+- Adding/removing comments
+- Fixing bugs or issues
+- Refactoring code
+- Adding imports
+- ANY file modifications
+- ANY code-related actions
+
+**NO EXCEPTIONS. NO SHORTCUTS.** Even if the user describes a problem or issue, you must ask before fixing it. Even for tiny changes, you must ask first.
+
 ## Communication Protocol
 
 When the user asks questions or gives instructions:
@@ -16,9 +41,13 @@ This process ensures we're on the same page before any code is written or change
 **User asks:** "I want to add a new feature..."
 
 **AI responds:** 
-"What I understand: You want to add a new feature. Specifically, you want [restate what you heard]. Is that correct?"
+"What I understand: You want to add a new feature. Specifically, you want [restate what you heard]. 
 
-**User confirms:** "Yes" or provides clarification
+Here's what I plan to do: [explain specific steps, files to modify, etc.]
+
+Do you want me to proceed with implementing this feature?"
+
+**User confirms:** "Yes" or "proceed" or provides clarification
 
 **AI then:** Proceeds with implementation
 

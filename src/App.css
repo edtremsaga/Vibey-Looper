@@ -2526,6 +2526,8 @@ input[type="range"]:focus-visible {
   width: 100%;
   display: flex;
   justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .set-list-play-button {
@@ -2567,4 +2569,74 @@ input[type="range"]:focus-visible {
   .set-list-container {
     grid-template-columns: 1fr;
   }
+}
+
+/* Saved Set Lists Dropdown */
+.saved-set-lists-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #000;
+  border: 3px solid #fff;
+  border-radius: 0;
+  max-height: 400px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 500px;
+  box-shadow: 4px 4px 0px #666;
+}
+
+/* Style scrollbar for saved set lists dropdown */
+.saved-set-lists-dropdown::-webkit-scrollbar {
+  width: 12px;
+}
+
+.saved-set-lists-dropdown::-webkit-scrollbar-track {
+  background: #000;
+  border-left: 1px solid #333;
+}
+
+.saved-set-lists-dropdown::-webkit-scrollbar-thumb {
+  background: #666;
+  border: 1px solid #333;
+}
+
+.saved-set-lists-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+.saved-set-list-item {
+  padding: 12px 16px;
+  border-bottom: 2px solid #333;
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.saved-set-list-item:hover {
+  background: #1a1a1a;
+}
+
+.saved-set-list-item:last-child {
+  border-bottom: none;
+}
+
+.saved-set-list-item .delete-button {
+  background: #000;
+  border: 2px solid #ff0000;
+  color: #ff0000;
+  width: 24px;
+  height: 24px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.saved-set-list-item .delete-button:hover {
+  background: #ff0000;
+  color: #000;
 }
