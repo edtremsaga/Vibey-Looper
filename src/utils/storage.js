@@ -468,43 +468,54 @@ export const loadSetList = () => {
 }
 
 // Security: Validate saved set list data structure to prevent data poisoning
-const validateSavedSetList = (savedSetList) => {
+const validateSavedSetList = (savedSetList, index) => {
   // Basic structure check
   if (!savedSetList || typeof savedSetList !== 'object') {
+    console.warn(`[Validation] Item ${index}: Failed - not an object or is null`, savedSetList)
     return null
   }
   
   // ID is required
   if (!savedSetList.id || typeof savedSetList.id !== 'string' || savedSetList.id.trim() === '') {
+    console.warn(`[Validation] Item ${index} (${savedSetList.name || 'unnamed'}): Failed - invalid or missing ID`, savedSetList.id)
     return null
   }
   
   // Name is required and must be valid
   if (!savedSetList.name || typeof savedSetList.name !== 'string' || savedSetList.name.trim() === '') {
+    console.warn(`[Validation] Item ${index} (ID: ${savedSetList.id}): Failed - invalid or missing name`, savedSetList.name)
     return null
   }
   
   // Songs must be an array
   if (!Array.isArray(savedSetList.songs)) {
+    console.warn(`[Validation] Item ${index} (${savedSetList.name}): Failed - songs is not an array`, typeof savedSetList.songs)
     return null
   }
   
   // Validate each song in the array
   const validatedSongs = savedSetList.songs
-    .map(song => {
+    .map((song, songIndex) => {
       if (!song || typeof song !== 'object' || !song.videoId) {
+        console.warn(`[Validation] Item ${index} (${savedSetList.name}) song ${songIndex}: Failed - missing videoId or not an object`, song)
         return null
       }
       // Validate videoId format
       if (typeof song.videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(song.videoId)) {
+        console.warn(`[Validation] Item ${index} (${savedSetList.name}) song ${songIndex}: Failed - invalid videoId format`, song.videoId, `(length: ${song.videoId?.length})`)
         return null
       }
       return song
     })
     .filter(song => song !== null)
   
+  // Log if songs were filtered out
+  if (validatedSongs.length < savedSetList.songs.length) {
+    console.warn(`[Validation] Item ${index} (${savedSetList.name}): ${savedSetList.songs.length - validatedSongs.length} songs filtered out (${validatedSongs.length} valid songs remain)`)
+  }
+  
   // Return validated and sanitized saved set list object
-  return {
+  const validated = {
     id: savedSetList.id.substring(0, 100), // Sanitize ID length
     name: savedSetList.name.trim().substring(0, 50), // Sanitize name (max 50 chars)
     songs: validatedSongs,
@@ -512,6 +523,9 @@ const validateSavedSetList = (savedSetList) => {
       ? savedSetList.createdAt
       : Date.now() // Default to current time if invalid
   }
+  
+  console.log(`[Validation] Item ${index} (${validated.name}): PASSED - ${validatedSongs.length} songs`)
+  return validated
 }
 
 // Helper function to save a named set list to localStorage
@@ -553,10 +567,13 @@ export const saveSavedSetList = (name, songs) => {
     
     // Load existing saved set lists
     const savedSetLists = JSON.parse(localStorage.getItem('savedSetLists') || '[]')
+    console.log(`[Save] Current saved set lists: ${savedSetLists.length} items`)
+    console.log(`[Save] Saving new set list: "${savedSetList.name}" with ${validatedSongs.length} songs (ID: ${savedSetList.id})`)
     
     // Add new set list to the beginning (most recent first)
     const newSavedSetLists = [savedSetList, ...savedSetLists].slice(0, 100) // Keep max 100 saved set lists
     
+    console.log(`[Save] After adding new item: ${newSavedSetLists.length} total items (max 100)`)
     localStorage.setItem('savedSetLists', JSON.stringify(newSavedSetLists))
     return savedSetList
   } catch (error) {
@@ -630,28 +647,38 @@ export const updateSavedSetList = (id, name, songs) => {
 // Security: Validates and sanitizes data to prevent data poisoning attacks
 export const loadSavedSetLists = () => {
   try {
-    const data = JSON.parse(localStorage.getItem('savedSetLists') || '[]')
+    const rawData = localStorage.getItem('savedSetLists')
+    console.log('[Load] Raw localStorage data:', rawData ? `Found ${rawData.length} characters` : 'null')
+    
+    const data = JSON.parse(rawData || '[]')
+    console.log('[Load] Parsed data:', Array.isArray(data) ? `${data.length} items` : 'not an array')
     
     // Validate that data is an array
     if (!Array.isArray(data)) {
-      console.warn('Invalid saved set lists data structure, resetting to empty array')
+      console.warn('[Load] Invalid saved set lists data structure, resetting to empty array')
       return []
     }
     
+    console.log(`[Load] Starting validation of ${data.length} items...`)
+    
     // Validate and filter out invalid entries
     const validated = data
-      .map(validateSavedSetList)
+      .map((setList, index) => validateSavedSetList(setList, index))
       .filter(setList => setList !== null) // Remove invalid entries
       .slice(0, 100) // Enforce maximum limit
     
     // Log if entries were filtered out (for debugging)
     if (validated.length < data.length) {
-      console.warn(`Filtered out ${data.length - validated.length} invalid saved set list entries`)
+      console.warn(`[Load] Filtered out ${data.length - validated.length} invalid saved set list entries (${validated.length} valid items remain)`)
+    } else {
+      console.log(`[Load] All ${validated.length} items passed validation`)
     }
+    
+    console.log('[Load] Final validated list:', validated.map(item => `${item.name} (${item.songs.length} songs, ID: ${item.id})`))
     
     return validated
   } catch (error) {
-    console.warn('Failed to load saved set lists:', error)
+    console.warn('[Load] Failed to load saved set lists:', error)
     return []
   }
 }

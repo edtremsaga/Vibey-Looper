@@ -52,6 +52,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
   // Load saved set lists on mount
   useEffect(() => {
     const loaded = loadSavedSetLists()
+    console.log('Loaded saved set lists:', loaded.length, 'items:', loaded)
     setSavedSetLists(loaded)
   }, [])
 
@@ -344,6 +345,8 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
       setErrorMessage('Set list is empty. Add songs to the set list before saving.')
       return
     }
+    console.log('[Save Modal] Opening save modal - current loadedSetListId:', loadedSetListId)
+    console.log('[Save Modal] Current set list has', setList.length, 'songs')
     setSetListName('')
     setSaveModalError('')
     setShowSaveModal(true)
@@ -368,11 +371,16 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
       return
     }
 
+    console.log('[Save Handler] Current loadedSetListId:', loadedSetListId)
+    console.log('[Save Handler] Current savedSetLists count:', savedSetLists.length)
+
     // Check for duplicate name (unless it's the currently loaded set list)
     const existing = savedSetLists.find(list => 
       list.name.toLowerCase() === trimmedName.toLowerCase() && 
       list.id !== loadedSetListId
     )
+    
+    console.log('[Save Handler] Duplicate check - existing:', existing ? `Found "${existing.name}" (ID: ${existing.id})` : 'No duplicate found')
     
     if (existing) {
       setSaveModalError('A set list with this name already exists. Please choose a different name.')
@@ -380,22 +388,48 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
     }
 
     // Save or update
+    // Only update if: loadedSetListId is set AND the name matches the loaded set list's name
+    // Otherwise, create a new set list
     let saved
     if (loadedSetListId) {
-      // Update existing
-      saved = updateSavedSetList(loadedSetListId, trimmedName, setList)
+      const loadedSetList = savedSetLists.find(list => list.id === loadedSetListId)
+      if (loadedSetList && loadedSetList.name.toLowerCase() === trimmedName.toLowerCase()) {
+        // Same name as loaded set list - update it
+        console.log('[Save Handler] UPDATING existing set list (ID:', loadedSetListId, ') - same name')
+        saved = updateSavedSetList(loadedSetListId, trimmedName, setList)
+        console.log('[Save Handler] Update result:', saved ? `Success (ID: ${saved.id})` : 'Failed')
+      } else {
+        // Different name - create new set list
+        console.log('[Save Handler] CREATING new set list - different name from loaded set list')
+        saved = saveSavedSetList(trimmedName, setList)
+        console.log('[Save Handler] Create result:', saved ? `Success (ID: ${saved.id})` : 'Failed')
+        // Clear loadedSetListId since we're creating a new one
+        setLoadedSetListId(null)
+        console.log('[Save Handler] Cleared loadedSetListId (creating new set list)')
+      }
     } else {
       // Create new
+      console.log('[Save Handler] CREATING new set list')
       saved = saveSavedSetList(trimmedName, setList)
+      console.log('[Save Handler] Create result:', saved ? `Success (ID: ${saved.id})` : 'Failed')
     }
 
     if (saved) {
       // Reload saved set lists
+      console.log('[Save Handler] Reloading saved set lists...')
       const updated = loadSavedSetLists()
+      console.log('[Save Handler] Reloaded count:', updated.length)
       setSavedSetLists(updated)
       
-      // Track the loaded set list ID
-      setLoadedSetListId(saved.id)
+      // Only track loadedSetListId if we updated an existing set list (same name)
+      // If we created a new one, don't track it (allow user to create more new ones)
+      if (loadedSetListId && updated.find(list => list.id === loadedSetListId && list.name.toLowerCase() === trimmedName.toLowerCase())) {
+        console.log('[Save Handler] Keeping loadedSetListId:', loadedSetListId, '(updated existing)')
+        // loadedSetListId already set, keep it
+      } else {
+        console.log('[Save Handler] Cleared loadedSetListId (created new set list)')
+        setLoadedSetListId(null)
+      }
       
       // Close modal and show success
       handleCloseSaveModal()
@@ -404,6 +438,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
         setSuccessMessage('')
       }, 3000)
     } else {
+      console.error('[Save Handler] Save/update failed!')
       setSaveModalError('Failed to save set list. Please try again.')
     }
   }
@@ -416,8 +451,10 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
   }
 
   const handleLoadSavedSetList = (savedSetList) => {
+    console.log('[Load Handler] Loading saved set list:', savedSetList.name, '(ID:', savedSetList.id, ')')
     setSetList(savedSetList.songs)
     setLoadedSetListId(savedSetList.id)
+    console.log('[Load Handler] Set loadedSetListId to:', savedSetList.id)
     setShowSavedSetListsDropdown(false)
     setErrorMessage('')
   }
@@ -549,7 +586,9 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
                   No saved set lists
                 </div>
               ) : (
-                savedSetLists.map((savedSetList) => (
+                (() => {
+                  console.log('Rendering saved set lists dropdown:', savedSetLists.length, 'items')
+                  return savedSetLists.map((savedSetList) => (
                   <div
                     key={savedSetList.id}
                     className="saved-set-list-item"
@@ -570,6 +609,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
                     </button>
                   </div>
                 ))
+                })()
               )}
             </div>
           )}
