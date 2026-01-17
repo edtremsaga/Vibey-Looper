@@ -126,6 +126,7 @@ function App() {
   const isCheckingTimeRef = useRef(false)
   const loadingFromSavedLoopRef = useRef(null) // Track start time when loading from saved loop
   const loadingFromRecentVideoRef = useRef(false) // Track when loading from recent video
+  const previousShowSetListPageRef = useRef(false) // Track previous Set List page state
 
   // Detect mobile device
   useEffect(() => {
@@ -214,6 +215,67 @@ function App() {
       setIsDefaultVideo(false)
     }
   }, [videoId, userDefaultVideo])
+
+  // Reset main page state when returning from Set List page
+  // This ensures the page is in a fresh state, as if the app just loaded
+  useEffect(() => {
+    // Check if we're transitioning from Set List page back to main page
+    const wasOnSetList = previousShowSetListPageRef.current === true
+    const isReturningFromSetList = wasOnSetList && !showSetListPage
+    
+    if (isReturningFromSetList) {
+      // Reset all state to initial values
+      const defaultVideo = loadDefaultVideo()
+      const initialVideoId = defaultVideo ? defaultVideo.url : APP_DEFAULT_VIDEO
+      
+      setVideoId(initialVideoId)
+      setStartTime(0)
+      setStartTimeDisplay('0:00')
+      setEndTime(10)
+      setEndTimeDisplay('0:10')
+      setTargetLoops(5)
+      setTargetLoopsDisplay('5')
+      setCurrentLoops(0)
+      setIsPlaying(false)
+      setHasBeenStopped(false)
+      setPlaybackSpeed(1)
+      setValidationError('')
+      setCurrentTime(0)
+      setVideoDuration(null)
+      setPlayer(null)
+      
+      // Reset refs
+      playerInitializedRef.current = false
+      hasLoopedRef.current = false
+      loadingFromSavedLoopRef.current = null
+      loadingFromRecentVideoRef.current = false
+      
+      // Reset video info - will be fetched when player initializes with default video
+      const defaultVideoId = extractVideoId(initialVideoId)
+      if (defaultVideoId && defaultVideoId.length === 11) {
+        // Try to get video info from recent videos first
+        const recentVideos = loadRecentVideos()
+        const existingVideo = recentVideos.find(v => v.videoId === defaultVideoId)
+        if (existingVideo) {
+          setVideoTitle(existingVideo.title || '')
+          setVideoThumbnail(existingVideo.thumbnail || '')
+          setVideoAuthor(existingVideo.author || '')
+        } else {
+          // Clear and let the player initialization fetch it
+          setVideoTitle('')
+          setVideoThumbnail('')
+          setVideoAuthor('')
+        }
+      }
+    } else if (showSetListPage) {
+      // When going to Set List, clear player state
+      setPlayer(null)
+      playerInitializedRef.current = false
+    }
+    
+    // Update the previous state ref
+    previousShowSetListPageRef.current = showSetListPage
+  }, [showSetListPage])
 
   // Fetch default video info on mount and save to recent videos
   useEffect(() => {
@@ -1272,7 +1334,7 @@ function App() {
           savedLoops={savedLoops}
         />
       ) : (
-        <>
+    <>
       {/* Skip link for keyboard navigation */}
       <a href="#main-content" className="skip-link">
         Skip to main content
@@ -1675,12 +1737,12 @@ function App() {
                       onClick={() => setShowSavedLoops(false)}
                       aria-hidden="true"
                     />
-                    <div 
-                      id="saved-loops-menu"
-                      className="saved-loops-dropdown"
-                      role="menu"
-                      aria-label="Saved loops"
-                    >
+                  <div 
+                    id="saved-loops-menu"
+                    className="saved-loops-dropdown"
+                    role="menu"
+                    aria-label="Saved loops"
+                  >
                     {savedLoops.map((loop, index) => (
                       <button
                         key={loop.id || index}
@@ -1722,7 +1784,7 @@ function App() {
                         </button>
                       </button>
                     ))}
-                    </div>
+                  </div>
                   </>
                 )}
               </div>
@@ -1747,12 +1809,12 @@ function App() {
                     onClick={() => setShowRecentVideos(false)}
                     aria-hidden="true"
                   />
-                  <div 
-                    id="recent-videos-menu"
-                    className="recent-videos-dropdown"
-                    role="menu"
-                    aria-label="Recent videos"
-                  >
+                <div 
+                  id="recent-videos-menu"
+                  className="recent-videos-dropdown"
+                  role="menu"
+                  aria-label="Recent videos"
+                >
                   {recentVideos.map((video, index) => {
                     const isDefault = userDefaultVideo && userDefaultVideo.videoId === video.videoId
                     return (
@@ -1783,22 +1845,22 @@ function App() {
                           <span className="recent-video-id">{video.videoId}</span>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        className="delete-button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteRecentVideo(video.videoId, video.title || `Video ${video.videoId}`)
-                        }}
-                        aria-label={`Delete recent video: ${video.title || video.videoId}`}
-                        title="Delete this recent video"
-                      >
-                        ×
-                      </button>
+                        <button
+                          type="button"
+                          className="delete-button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteRecentVideo(video.videoId, video.title || `Video ${video.videoId}`)
+                          }}
+                          aria-label={`Delete recent video: ${video.title || video.videoId}`}
+                          title="Delete this recent video"
+                        >
+                          ×
+                        </button>
                     </button>
                     )
                   })}
-                  </div>
+                </div>
                 </>
               )}
               </div>
@@ -1809,20 +1871,20 @@ function App() {
         {/* Mobile label - shown only on mobile, below buttons */}
         <label htmlFor="video-id" className="mobile-label">URL or Video ID of song from YouTube</label>
         <div className="video-id-input-wrapper">
-          <input
-            id="video-id"
-            type="text"
-            value={videoId}
-            onChange={(e) => handleVideoIdChange(e.target.value)}
-            onKeyDown={(e) => handleInputKeyDown(e, setVideoId)}
-            onFocus={() => setShowRecentVideos(false)}
-            placeholder="Enter URL or Video ID of song from YouTube"
-            disabled={!apiReady}
-            autoFocus
-            aria-invalid={!!validationError}
-            aria-describedby={validationError ? "video-id-error" : undefined}
-            aria-errormessage={validationError ? "video-id-error" : undefined}
-          />
+        <input
+          id="video-id"
+          type="text"
+          value={videoId}
+          onChange={(e) => handleVideoIdChange(e.target.value)}
+          onKeyDown={(e) => handleInputKeyDown(e, setVideoId)}
+          onFocus={() => setShowRecentVideos(false)}
+          placeholder="Enter URL or Video ID of song from YouTube"
+          disabled={!apiReady}
+          autoFocus
+          aria-invalid={!!validationError}
+          aria-describedby={validationError ? "video-id-error" : undefined}
+          aria-errormessage={validationError ? "video-id-error" : undefined}
+        />
           {videoId && (
             <button
               type="button"
