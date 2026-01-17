@@ -2267,13 +2267,14 @@ function App() {
         )}
       </div>
 
-      {/* Set List control button */}
-      {/* Temporarily enabled for mobile testing */}
-      <div className="set-list-link-bottom">
-        <button className="help-link-text" onClick={() => setShowSetListPage(true)}>
-          set list
-        </button>
-      </div>
+      {/* Set List control button - Desktop only */}
+      {!isMobile && (
+        <div className="set-list-link-bottom">
+          <button className="help-link-text" onClick={() => setShowSetListPage(true)}>
+            set list
+          </button>
+        </div>
+      )}
 
       {/* Help and Feedback links at bottom */}
       <div className="help-link-bottom">
