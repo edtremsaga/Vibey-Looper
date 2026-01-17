@@ -1460,6 +1460,26 @@ function App() {
                     )}
                   </ul>
                 </li>
+                {!isMobile && (
+                  <li>
+                    <strong>Set List (Desktop Only):</strong>
+                    <ul>
+                      <li>Create a playlist of multiple songs to play in sequence</li>
+                      <li>{isMobile ? 'Tap' : 'Click'} the "set list" link below the loop counter to open the Set List page</li>
+                      <li>Drag songs from your "Saved Loops" column to the "Set List" column to add them to your playlist</li>
+                      <li>Drag songs within the Set List column to reorder them</li>
+                      <li>Each song in the set list is numbered (1, 2, 3...) showing the play order</li>
+                      <li>{isMobile ? 'Tap' : 'Click'} the "X" button on any song to remove it from the set list</li>
+                      <li>{isMobile ? 'Tap' : 'Click'} "Play Set List" to play all songs in order with a 5-second pause between songs</li>
+                      <li>During playback, you'll see a countdown showing when the next song will start</li>
+                      <li>After the last song, you'll see a "Set list complete" message</li>
+                      <li><strong>Save Set List:</strong> {isMobile ? 'Tap' : 'Click'} "Save Set List" to save your current set list with a custom name (max 50 characters)</li>
+                      <li><strong>Load Saved Set Lists:</strong> {isMobile ? 'Tap' : 'Click'} "Saved Set Lists" to see all your saved set lists and load one to replace your current set list</li>
+                      <li><strong>Delete Saved Set Lists:</strong> {isMobile ? 'Tap' : 'Click'} the red X next to any saved set list to delete it (with confirmation)</li>
+                      <li>Set lists are saved in your browser's local storage and will persist between sessions</li>
+                    </ul>
+                  </li>
+                )}
               </ol>
               {!isMobile && (
                 <div className="help-keyboard">
@@ -1474,7 +1494,7 @@ function App() {
               {isMobile && (
                 <div className="help-mobile-note">
                   <p style={{ fontStyle: 'italic', fontSize: '13px', color: '#aaa', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    <strong>Note:</strong> YouTube search, volume control, playback speed slider, loop duration display, and keyboard shortcuts are only included in the Desktop version of this app. The Mobile version does not include these items. However, Save Loop, Saved Loops, and Recent Videos functionality is fully available on mobile with optimized touch targets and bottom sheet interfaces.
+                    <strong>Note:</strong> YouTube search, volume control, playback speed slider, loop duration display, Set List feature, and keyboard shortcuts are only included in the Desktop version of this app. The Mobile version does not include these items. However, Save Loop, Saved Loops, and Recent Videos functionality is fully available on mobile with optimized touch targets and bottom sheet interfaces.
                   </p>
                 </div>
               )}
