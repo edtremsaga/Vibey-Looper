@@ -127,6 +127,8 @@ function App() {
   const loadingFromSavedLoopRef = useRef(null) // Track start time when loading from saved loop
   const loadingFromRecentVideoRef = useRef(false) // Track when loading from recent video
   const previousShowSetListPageRef = useRef(false) // Track previous Set List page state
+  const lastAutoSetEndTimeVideoIdRef = useRef(null) // Track which video ID we've auto-set endTime for
+  const videoDurationVideoIdRef = useRef(null) // Track which videoId the current videoDuration belongs to
 
   // Detect mobile device
   useEffect(() => {
@@ -249,6 +251,7 @@ function App() {
       hasLoopedRef.current = false
       loadingFromSavedLoopRef.current = null
       loadingFromRecentVideoRef.current = false
+      lastAutoSetEndTimeVideoIdRef.current = null
       
       // Reset video info - will be fetched when player initializes with default video
       const defaultVideoId = extractVideoId(initialVideoId)
@@ -441,7 +444,11 @@ function App() {
               try {
                 const duration = event.target.getDuration()
                 if (duration && duration > 0) {
-                  setVideoDuration(duration)
+                  const extractedId = extractVideoId(videoId)
+                  if (extractedId && extractedId.length === 11) {
+                    setVideoDuration(duration)
+                    videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
+                  }
                 }
               } catch (error) {
                 // Duration not available yet, will be fetched by useEffect
@@ -668,7 +675,11 @@ function App() {
       try {
         const duration = player.getDuration()
         if (duration && duration > 0 && !isNaN(duration)) {
-          setVideoDuration(duration)
+          const extractedId = extractVideoId(videoId)
+          if (extractedId && extractedId.length === 11) {
+            setVideoDuration(duration)
+            videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
+          }
         } else {
           // Duration might not be available immediately, try again
           setTimeout(() => {
@@ -676,7 +687,11 @@ function App() {
               try {
                 const dur = player.getDuration()
                 if (dur && dur > 0 && !isNaN(dur)) {
-                  setVideoDuration(dur)
+                  const extractedId = extractVideoId(videoId)
+                  if (extractedId && extractedId.length === 11) {
+                    setVideoDuration(dur)
+                    videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
+                  }
                 }
               } catch (e) {
                 // Duration still not available
@@ -693,6 +708,34 @@ function App() {
     const timer = setTimeout(getDuration, 500)
     return () => clearTimeout(timer)
   }, [player, videoId])
+
+  // Auto-set endTime to video duration when a new video loads
+  // This runs after videoDuration becomes available
+  useEffect(() => {
+    // Skip if:
+    // - No video duration available yet
+    // - Loading from a saved loop (preserve saved times)
+    // - Already auto-set endTime for this video
+    // - videoDuration doesn't belong to the current video (prevents using stale duration)
+    if (!videoDuration || videoDuration <= 0) return
+    if (loadingFromSavedLoopRef.current !== null) return
+    
+    const currentVideoId = extractVideoId(videoId)
+    if (!currentVideoId || currentVideoId.length !== 11) return
+    
+    // Only use videoDuration if it belongs to the current video
+    // This prevents using stale duration from a previous video
+    if (videoDurationVideoIdRef.current !== currentVideoId) return
+    
+    if (lastAutoSetEndTimeVideoIdRef.current === currentVideoId) return
+    
+    // Auto-set endTime to video duration
+    setEndTime(videoDuration)
+    setEndTimeDisplay(secondsToMMSS(videoDuration))
+    
+    // Track that we've auto-set for this video
+    lastAutoSetEndTimeVideoIdRef.current = currentVideoId
+  }, [videoDuration, videoId])
 
   // Validate times
   // Security: Validates time inputs against video duration and prevents invalid ranges
@@ -986,6 +1029,14 @@ function App() {
     setVideoId(newVideoId)
     setValidationError('')
     setShowRecentVideos(false)
+    
+    // Reset start time to beginning of video when new URL is loaded
+    setStartTime(0)
+    setStartTimeDisplay('0:00')
+    
+    // Clear the auto-set tracking so endTime can be set to duration when available
+    lastAutoSetEndTimeVideoIdRef.current = null
+    
     // Video loading will be handled by the useEffect watching videoId
   }, [])
 
@@ -1006,11 +1057,16 @@ function App() {
     setCurrentLoops(0)
     hasLoopedRef.current = false
     
-    // Reset start and end times to defaults (same as loading a brand new video)
+    // Reset start time to beginning of video
     setStartTime(0)
-    setEndTime(10)
     setStartTimeDisplay('0:00')
+    
+    // Reset end time temporarily to 10 seconds (will be updated to video duration when available)
+    setEndTime(10)
     setEndTimeDisplay('0:10')
+    
+    // Clear the auto-set tracking so endTime can be set to duration when available
+    lastAutoSetEndTimeVideoIdRef.current = null
     
     // Note: Don't pause here - let cueVideoById handle it (shows thumbnail without auto-play)
   }, [])
