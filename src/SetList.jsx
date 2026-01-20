@@ -4,7 +4,7 @@ import './App.css'
 import { extractVideoId } from './utils/helpers.js'
 import { loadSavedLoops, saveSetList, loadSetList, saveSavedSetList, loadSavedSetLists, deleteSavedSetList, updateSavedSetList } from './utils/storage.js'
 
-function SetList({ onBack, savedLoops: savedLoopsProp }) {
+function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   // State management
   const [savedLoops, setSavedLoops] = useState([])
   const [setList, setSetList] = useState([])
@@ -299,6 +299,26 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
       setSetList(newSetList)
       setErrorMessage('')
     }
+  }
+
+  // Add saved loop to set list (via button click)
+  const handleAddToSetList = (loopId) => {
+    const loopToAdd = savedLoops.find(loop => loop.id === loopId)
+    if (!loopToAdd) {
+      return
+    }
+    
+    // Check for duplicates
+    const isDuplicate = setList.some(item => item.videoId === loopToAdd.videoId)
+    if (isDuplicate) {
+      setErrorMessage('This song is already in the set list.')
+      setTimeout(() => setErrorMessage(''), 3000)
+      return
+    }
+    
+    // Add to end of set list
+    setSetList([...setList, loopToAdd])
+    setErrorMessage('')
   }
 
   // Remove song from set list
@@ -669,16 +689,18 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
                         ? `${loop.title || `Video ${loop.videoId}`} - ${loop.author}`
                         : (loop.title || `Video ${loop.videoId}`)
                       return (
-                        <Draggable key={loop.id} draggableId={loop.id} index={index}>
+                        <Draggable key={loop.id} draggableId={loop.id} index={index} isDragDisabled={isMobile}>
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
+                              {...(isMobile ? {} : provided.draggableProps)}
+                              {...(isMobile ? {} : provided.dragHandleProps)}
                               className={`set-list-item ${snapshot.isDragging ? 'dragging' : ''}`}
-                              style={provided.draggableProps.style}
+                              style={isMobile ? {} : provided.draggableProps.style}
                             >
-                              <span className="set-list-drag-handle">⋮⋮</span>
+                              <span className="set-list-drag-handle">
+                                ⋮⋮
+                              </span>
                               {loop.thumbnail && (
                                 <img 
                                   src={loop.thumbnail} 
@@ -687,7 +709,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
                                   onError={(e) => { e.target.style.display = 'none' }}
                                 />
                               )}
-                              <div className="set-list-item-info" title={fullText}>
+                              <div className="set-list-item-info" title={fullText} data-tooltip={fullText}>
                                 <div className="set-list-item-title">
                                   {loop.title || `Video ${loop.videoId}`}
                                 </div>
@@ -697,6 +719,25 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
                                   </div>
                                 )}
                               </div>
+                              <button
+                                className="set-list-add-button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  e.preventDefault()
+                                  handleAddToSetList(loop.id)
+                                }}
+                                onTouchStart={(e) => {
+                                  e.stopPropagation()
+                                }}
+                                onTouchEnd={(e) => {
+                                  e.stopPropagation()
+                                  e.preventDefault()
+                                  handleAddToSetList(loop.id)
+                                }}
+                                aria-label={`Add ${loop.title || loop.videoId} to set list`}
+                              >
+                                +
+                              </button>
                             </div>
                           )}
                         </Draggable>
@@ -754,7 +795,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp }) {
                                   onError={(e) => { e.target.style.display = 'none' }}
                                 />
                               )}
-                              <div className="set-list-item-info" title={fullText}>
+                              <div className="set-list-item-info" title={fullText} data-tooltip={fullText}>
                                 <div className="set-list-item-title">
                                   {item.title || `Video ${item.videoId}`}
                                 </div>
