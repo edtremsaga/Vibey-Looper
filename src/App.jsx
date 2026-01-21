@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import './App.css'
 import { secondsToMMSS, mmssToSeconds, normalizeMMSS, extractVideoId, getYouTubeErrorMessage } from './utils/helpers.js'
 import { saveRecentVideo, loadRecentVideos, deleteRecentVideo, saveDefaultVideo, loadDefaultVideo, clearDefaultVideo, saveSavedLoop, loadSavedLoops, deleteSavedLoop } from './utils/storage.js'
+import { BREAKPOINTS, TIME_LIMITS, LOOP_LIMITS, STRING_LIMITS, YOUTUBE, DEFAULTS, VOLUME, PLAYBACK_SPEED } from './utils/constants.js'
 import SetList from './SetList.jsx'
 
 // App default video (fallback)
@@ -20,7 +21,7 @@ const fetchVideoTitle = async (videoId) => {
     
     // Security: Add timeout to prevent hanging requests (5 seconds)
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    const timeoutId = setTimeout(() => controller.abort(), TIME_LIMITS.API_TIMEOUT)
     
     const response = await fetch(url, {
       signal: controller.signal
@@ -46,22 +47,22 @@ const fetchVideoTitle = async (videoId) => {
     
     // Security: Sanitize and validate each field with length limits
     // Title: max 200 characters, default to empty string if invalid
-    const title = typeof data.title === 'string' && data.title.length > 0 && data.title.length <= 200
-      ? data.title.substring(0, 200)
+    const title = typeof data.title === 'string' && data.title.length > 0 && data.title.length <= STRING_LIMITS.TITLE
+      ? data.title.substring(0, STRING_LIMITS.TITLE)
       : ''
     
     // Author: max 100 characters, optional field (default to empty string)
-    const author = typeof data.author_name === 'string' && data.author_name.length > 0 && data.author_name.length <= 100
-      ? data.author_name.substring(0, 100)
+    const author = typeof data.author_name === 'string' && data.author_name.length > 0 && data.author_name.length <= STRING_LIMITS.AUTHOR
+      ? data.author_name.substring(0, STRING_LIMITS.AUTHOR)
       : ''
     
     // Thumbnail: must be valid HTTPS URL, max 500 characters
     let thumbnail = ''
     if (typeof data.thumbnail_url === 'string' && 
         data.thumbnail_url.length > 0 && 
-        data.thumbnail_url.length <= 500 &&
+        data.thumbnail_url.length <= STRING_LIMITS.THUMBNAIL &&
         data.thumbnail_url.startsWith('https://')) {
-      thumbnail = data.thumbnail_url.substring(0, 500)
+      thumbnail = data.thumbnail_url.substring(0, STRING_LIMITS.THUMBNAIL)
     }
     
     // Return object with validated and sanitized data
@@ -107,7 +108,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [hasBeenStopped, setHasBeenStopped] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [volume, setVolume] = useState(75) // Volume control (0-100)
+  const [volume, setVolume] = useState(DEFAULTS.VOLUME) // Volume control (0-100)
   const [videoDuration, setVideoDuration] = useState(null)
   const [videoTitle, setVideoTitle] = useState('')
   const [videoThumbnail, setVideoThumbnail] = useState('')
@@ -125,10 +126,13 @@ function App() {
   const loadingTimeoutRef = useRef(null)
   const isCheckingTimeRef = useRef(false)
   const loadingFromSavedLoopRef = useRef(null) // Track start time when loading from saved loop
+  const isLoadingSavedLoopRef = useRef(false) // Flag to prevent auto-set from overwriting saved loop times
+  const preserveEndTimeRef = useRef(false) // Flag to preserve endTime when loading saved loop - cleared on user action
   const loadingFromRecentVideoRef = useRef(false) // Track when loading from recent video
   const previousShowSetListPageRef = useRef(false) // Track previous Set List page state
   const lastAutoSetEndTimeVideoIdRef = useRef(null) // Track which video ID we've auto-set endTime for
   const videoDurationVideoIdRef = useRef(null) // Track which videoId the current videoDuration belongs to
+  const savedLoopTimesRef = useRef({ startTime: null, endTime: null }) // Store saved loop times from last Start Loop click
 
   // Detect mobile device
   useEffect(() => {
@@ -143,8 +147,8 @@ function App() {
       // 1. Viewport <= 768px, OR
       // 2. Has touch capability AND viewport <= 1024px, OR
       // 3. User agent indicates mobile device
-      const isMobileDevice = viewportWidth <= 768 || 
-                            (hasTouch && viewportWidth <= 1024) || 
+      const isMobileDevice = viewportWidth <= BREAKPOINTS.TABLET || 
+                            (hasTouch && viewportWidth <= BREAKPOINTS.DESKTOP) || 
                             isMobileUA
       
       setIsMobile(isMobileDevice)
@@ -250,6 +254,8 @@ function App() {
       playerInitializedRef.current = false
       hasLoopedRef.current = false
       loadingFromSavedLoopRef.current = null
+      isLoadingSavedLoopRef.current = false
+      preserveEndTimeRef.current = false
       loadingFromRecentVideoRef.current = false
       lastAutoSetEndTimeVideoIdRef.current = null
       
@@ -420,8 +426,8 @@ function App() {
       
       try {
         const newPlayer = new window.YT.Player(container, {
-          height: '390',
-          width: '640',
+          height: YOUTUBE.PLAYER_HEIGHT.toString(),
+          width: YOUTUBE.PLAYER_WIDTH.toString(),
           videoId: extractVideoId(videoId),
           playerVars: {
             playsinline: 1,
@@ -454,7 +460,7 @@ function App() {
                 // Duration not available yet, will be fetched by useEffect
                 console.warn('Duration not available yet')
               }
-            }, 500)
+            }, TIME_LIMITS.DURATION_DELAY)
             
             // Fetch and save video info to recent videos
             const extractedId = extractVideoId(videoId)
@@ -504,7 +510,9 @@ function App() {
                 try {
                   // Seek to start time - video is already paused from cueVideoById
                   event.target.seekTo(startTime, true)
-                  loadingFromSavedLoopRef.current = null // Clear flag after successful seek
+                  // Don't clear loadingFromSavedLoopRef here - keep it set to prevent
+                  // auto-set logic from overwriting saved end time. It will be cleared
+                  // in the auto-set useEffect after duration is available and it has skipped.
                   setIsPlaying(false) // Ensure state reflects paused
                 } catch (error) {
                   console.warn('Failed to seek to saved loop start time:', error)
@@ -559,7 +567,7 @@ function App() {
         setValidationError('Error initializing video player. Please refresh the page and try again.')
         playerInitializedRef.current = false
       }
-    }, 200)
+    }, TIME_LIMITS.PLAYER_INIT_DELAY)
     
     return () => clearTimeout(timer)
   }, [apiReady, playbackSpeed, videoId])
@@ -623,7 +631,9 @@ function App() {
             if (startTime !== null) {
               try {
                 player.seekTo(startTime, true)
-                loadingFromSavedLoopRef.current = null // Clear flag after seeking
+                // Don't clear loadingFromSavedLoopRef here - keep it set to prevent
+                // auto-set logic from overwriting saved end time. It will be cleared
+                // in the auto-set useEffect after duration is available and it has skipped.
               } catch (error) {
                 console.warn('Failed to seek to saved loop start time in timeout:', error)
                 // Keep flag set, onStateChange will retry
@@ -679,45 +689,76 @@ function App() {
           if (extractedId && extractedId.length === 11) {
             setVideoDuration(duration)
             videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
+            
+            // Clear isLoadingSavedLoopRef and loadingFromSavedLoopRef after setting duration
+            // preserveEndTimeRef stays set until user action (starts loop, changes endTime, loads new video)
+            if (isLoadingSavedLoopRef.current || loadingFromSavedLoopRef.current !== null) {
+              setTimeout(() => {
+                isLoadingSavedLoopRef.current = false
+                loadingFromSavedLoopRef.current = null
+                // Note: preserveEndTimeRef is NOT cleared here - it stays set until user action
+              }, 0)
+            }
           }
-        } else {
-          // Duration might not be available immediately, try again
-          setTimeout(() => {
-            if (player && player.getDuration) {
-              try {
-                const dur = player.getDuration()
-                if (dur && dur > 0 && !isNaN(dur)) {
-                  const extractedId = extractVideoId(videoId)
-                  if (extractedId && extractedId.length === 11) {
-                    setVideoDuration(dur)
-                    videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
+            } else {
+              // Duration might not be available immediately, try again
+              setTimeout(() => {
+                if (player && player.getDuration) {
+                  try {
+                    const dur = player.getDuration()
+                    if (dur && dur > 0 && !isNaN(dur)) {
+                      const extractedId = extractVideoId(videoId)
+                      if (extractedId && extractedId.length === 11) {
+                        setVideoDuration(dur)
+                        videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
+                        
+                        // Clear isLoadingSavedLoopRef and loadingFromSavedLoopRef after setting duration
+                        // preserveEndTimeRef stays set until user action (starts loop, changes endTime, loads new video)
+                        if (isLoadingSavedLoopRef.current || loadingFromSavedLoopRef.current !== null) {
+                          setTimeout(() => {
+                            isLoadingSavedLoopRef.current = false
+                            loadingFromSavedLoopRef.current = null
+                            // Note: preserveEndTimeRef is NOT cleared here - it stays set until user action
+                          }, 0)
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    // Duration still not available
                   }
                 }
-              } catch (e) {
-                // Duration still not available
-              }
+              }, TIME_LIMITS.API_TIMEOUT)
             }
-          }, 1000)
-        }
       } catch (error) {
         // Duration not available yet, will retry
       }
     }
 
     // Try to get duration after a short delay to ensure video is loaded
-    const timer = setTimeout(getDuration, 500)
+    const timer = setTimeout(getDuration, TIME_LIMITS.DURATION_DELAY)
     return () => clearTimeout(timer)
-  }, [player, videoId])
+  }, [player, videoId, endTime, endTimeDisplay])
 
   // Auto-set endTime to video duration when a new video loads
   // This runs after videoDuration becomes available
   useEffect(() => {
     // Skip if:
     // - No video duration available yet
-    // - Loading from a saved loop (preserve saved times)
+    // - Preserve endTime flag is set (user loaded saved loop) - CHECK THIS FIRST
+    // - Loading from a saved loop (preserve saved times) - secondary check
     // - Already auto-set endTime for this video
     // - videoDuration doesn't belong to the current video (prevents using stale duration)
     if (!videoDuration || videoDuration <= 0) return
+    
+    // CRITICAL: Check preserveEndTimeRef FIRST - this is the primary flag
+    // It stays set until user takes action (starts loop, changes endTime, loads new video)
+    // This prevents auto-set from running after flags are cleared in duration useEffect
+    if (preserveEndTimeRef.current) return
+    
+    // Also check isLoadingSavedLoopRef as a secondary guard (for backwards compatibility)
+    if (isLoadingSavedLoopRef.current) return
+    
+    // Also check loadingFromSavedLoopRef as a tertiary guard
     if (loadingFromSavedLoopRef.current !== null) return
     
     const currentVideoId = extractVideoId(videoId)
@@ -820,7 +861,7 @@ function App() {
           // Calculate time until end to determine check frequency
           const timeUntilEnd = endTime - time
           // Use adaptive interval: check every 500ms if >5s away, 100ms if closer
-          const nextCheckDelay = timeUntilEnd > 5 ? 500 : 100
+          const nextCheckDelay = timeUntilEnd > 5 ? TIME_LIMITS.CHECK_INTERVAL_FAR : TIME_LIMITS.CHECK_INTERVAL_NEAR
           
           if (time >= endTime) {
             // Check if we've already looped for this cycle
@@ -910,6 +951,15 @@ function App() {
     if (!player || validationError || endTime <= startTime) return
     
     try {
+      // Clear preserveEndTimeRef - user is starting a new loop, allow auto-set again
+      preserveEndTimeRef.current = false
+      
+      // Save current start and end times before starting (for reset functionality)
+      savedLoopTimesRef.current = {
+        startTime: startTime,
+        endTime: endTime
+      }
+      
       // Reset loop count
       setCurrentLoops(0)
       hasLoopedRef.current = false
@@ -990,13 +1040,23 @@ function App() {
 
   const handleReset = useCallback(() => {
     try {
-      // Reset to default values
-      setStartTime(0)
-      setEndTime(10)
-      setStartTimeDisplay('0:00')
-      setEndTimeDisplay('0:10')
+      const savedTimes = savedLoopTimesRef.current
+      
+      // If saved times exist, restore them; otherwise keep current times
+      if (savedTimes.startTime !== null && savedTimes.endTime !== null) {
+        // Restore saved start and end times
+        setStartTime(savedTimes.startTime)
+        setEndTime(savedTimes.endTime)
+        setStartTimeDisplay(secondsToMMSS(savedTimes.startTime))
+        setEndTimeDisplay(secondsToMMSS(savedTimes.endTime))
+      }
+      // If no saved times, don't change start/end times (keep current values)
+      
+      // Always reset target loops and loop counter
       setTargetLoops(5)
       setTargetLoopsDisplay('5')
+      setCurrentLoops(0)
+      hasLoopedRef.current = false
       
       if (player) {
         if (player.pauseVideo) {
@@ -1008,7 +1068,9 @@ function App() {
         }
         if (player.seekTo) {
           try {
-            player.seekTo(0, true) // Seek to default start time (0)
+            // Seek to saved start time if available, otherwise current start time
+            const seekTime = savedTimes.startTime !== null ? savedTimes.startTime : startTime
+            player.seekTo(seekTime, true)
           } catch (error) {
             console.warn('Failed to seek video on reset:', error)
             setValidationError('Failed to reset video position. Please try again.')
@@ -1017,15 +1079,16 @@ function App() {
         }
       }
       setIsPlaying(false)
-      setCurrentLoops(0)
-      hasLoopedRef.current = false
     } catch (error) {
       console.error('Error in handleReset:', error)
       setValidationError('An error occurred while resetting. Please try again.')
     }
-  }, [player])
+  }, [player, startTime])
 
   const handleVideoIdChange = useCallback((newVideoId) => {
+    // Clear preserveEndTimeRef - user is loading a new video (not from saved loop)
+    preserveEndTimeRef.current = false
+    
     setVideoId(newVideoId)
     setValidationError('')
     setShowRecentVideos(false)
@@ -1214,6 +1277,11 @@ function App() {
   // Handler to load a saved loop
   // Works exactly like handleRecentVideoSelect - just changes videoId and lets normal flow handle it
   const handleLoadSavedLoop = useCallback((savedLoop) => {
+    // Set flags FIRST, before any state changes, to prevent auto-set from running
+    // This must be set synchronously before any async operations
+    isLoadingSavedLoopRef.current = true
+    preserveEndTimeRef.current = true // Set preserve flag - will be cleared on user action
+    
     // Reset button states to default
     setIsPlaying(false)
     setHasBeenStopped(false)
@@ -1239,7 +1307,11 @@ function App() {
     // Set playback speed
     setPlaybackSpeed(savedLoop.playbackSpeed || 1)
     
+    // Clear auto-set tracking to prevent auto-set logic from overwriting saved end time
+    lastAutoSetEndTimeVideoIdRef.current = null
+    
     // Track that we're loading from saved loop - store start time for seeking
+    // Keep this flag set until video is fully loaded to prevent auto-set from overwriting saved times
     loadingFromSavedLoopRef.current = savedLoop.startTime
     
     // Close dropdown
@@ -1259,7 +1331,9 @@ function App() {
         if (player.seekTo) {
           player.seekTo(savedLoop.startTime, true)
         }
-        loadingFromSavedLoopRef.current = null // Clear flag after seeking
+        // Don't clear loadingFromSavedLoopRef immediately - keep it set to prevent
+        // auto-set logic from overwriting saved end time. It will be cleared after
+        // video duration is available and auto-set logic has had a chance to skip.
       } catch (error) {
         // If seek fails, keep flag set so onStateChange can retry
         console.warn('Failed to seek to start time immediately:', error)
@@ -1312,6 +1386,8 @@ function App() {
         setStartTimeDisplay(formatted)
         setStartTime(currentTime)
       } else {
+        // Clear preserveEndTimeRef - user is manually setting endTime from video position
+        preserveEndTimeRef.current = false
         setEndTimeDisplay(formatted)
         setEndTime(currentTime)
       }
@@ -2061,6 +2137,9 @@ function App() {
               type="text"
               value={endTimeDisplay}
               onChange={(e) => {
+                // Clear preserveEndTimeRef - user is manually changing endTime
+                preserveEndTimeRef.current = false
+                
                 const displayValue = e.target.value
                 setEndTimeDisplay(displayValue)
                 const seconds = mmssToSeconds(displayValue)
@@ -2070,6 +2149,8 @@ function App() {
                 // Normalize MM:SS format on blur (e.g., "0:75" → "1:15")
                 const normalized = normalizeMMSS(e.target.value)
                 if (normalized !== e.target.value) {
+                  // Clear preserveEndTimeRef - user is manually changing endTime
+                  preserveEndTimeRef.current = false
                   setEndTimeDisplay(normalized)
                   const seconds = mmssToSeconds(normalized)
                   setEndTime(seconds)
@@ -2125,8 +2206,7 @@ function App() {
                 // Update the actual targetLoops value, default to 1 if empty
                 const numValue = value === '' ? 1 : parseInt(value, 10)
                 // Security: Maximum reasonable limit (10,000 loops) to prevent DoS attacks
-                const MAX_LOOPS = 10000
-                const clampedValue = Math.min(Math.max(1, numValue || 1), MAX_LOOPS)
+                const clampedValue = Math.min(Math.max(1, numValue || 1), LOOP_LIMITS.MAX_LOOPS)
                 setTargetLoops(clampedValue)
                 
                 // Update display if value was clamped (user entered value > MAX_LOOPS)
@@ -2155,7 +2235,7 @@ function App() {
             disabled={isPlaying}
             aria-describedby="target-loops-help"
             aria-valuemin="1"
-            aria-valuemax="10000"
+            aria-valuemax={LOOP_LIMITS.MAX_LOOPS}
             aria-valuenow={targetLoops}
           />
           <span id="target-loops-help" className="sr-only">
@@ -2183,15 +2263,15 @@ function App() {
           <div className="volume-control-wrapper">
             <input
               type="range"
-              min="0"
-              max="100"
+              min={VOLUME.MIN}
+              max={VOLUME.MAX}
               value={volume}
               onChange={handleVolumeChange}
               className="volume-slider"
               id="volumeSlider"
               aria-label="Volume"
-              aria-valuemin="0"
-              aria-valuemax="100"
+              aria-valuemin={VOLUME.MIN}
+              aria-valuemax={VOLUME.MAX}
               aria-valuenow={volume}
               aria-valuetext={`${volume} percent`}
             />
@@ -2279,16 +2359,16 @@ function App() {
               </label>
               <input
                 type="range"
-                min="0.25"
-                max="2.0"
-                step="0.05"
+                min={PLAYBACK_SPEED.MIN}
+                max={PLAYBACK_SPEED.MAX}
+                step={PLAYBACK_SPEED.STEP}
                 value={playbackSpeed}
                 onChange={handlePlaybackSpeedChange}
                 className="speed-slider"
                 id="speedSlider"
                 aria-label="Playback speed"
-                aria-valuemin="0.25"
-                aria-valuemax="2.0"
+                aria-valuemin={PLAYBACK_SPEED.MIN}
+                aria-valuemax={PLAYBACK_SPEED.MAX}
                 aria-valuenow={playbackSpeed}
                 aria-valuetext={`${playbackSpeed.toFixed(2)} times normal speed`}
               />
