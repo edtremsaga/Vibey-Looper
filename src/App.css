@@ -39,6 +39,8 @@
   margin: 0 auto;
   /* Ensure dropdowns can extend beyond container if needed */
   overflow: visible;
+  /* Allow vertical scrolling despite React's non-passive touch listeners */
+  touch-action: pan-y;
 }
 
 /* Distressed border effect */
