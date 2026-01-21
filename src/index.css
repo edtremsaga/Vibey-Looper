@@ -4,12 +4,19 @@
   box-sizing: border-box;
 }
 
+html {
+  /* Enable smooth momentum scrolling on iOS Safari and Chrome */
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   font-family: 'Roboto Condensed', sans-serif;
   background: #000;
   color: #fff;
   min-height: 100vh;
   position: relative;
+  /* Enable smooth momentum scrolling on iOS Safari and Chrome */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Subtle punk rock texture overlay */
