@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import './App.css'
 import { extractVideoId } from './utils/helpers.js'
 import { loadSavedLoops, saveSetList, loadSetList, saveSavedSetList, loadSavedSetLists, deleteSavedSetList, updateSavedSetList } from './utils/storage.js'
+import { YOUTUBE, TIME_LIMITS, STRING_LIMITS } from './utils/constants.js'
 
 function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   // State management
@@ -53,7 +54,6 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   // Load saved set lists on mount
   useEffect(() => {
     const loaded = loadSavedSetLists()
-    console.log('Loaded saved set lists:', loaded.length, 'items:', loaded)
     setSavedSetLists(loaded)
   }, [])
 
@@ -85,7 +85,6 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
         
         // Force clear drag state by triggering a state update
         // This helps clear any stuck drag states from the drag-and-drop library
-        console.log('[ESC] Clearing drag state')
         setSetList([...setList]) // Force re-render to clear drag states
       }
     }
@@ -108,7 +107,6 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
         
         if (!isDraggableItem) {
           // Clicked outside draggable area - force clear drag state
-          console.log('[Click Outside] Clearing drag state')
           setSetList([...setList]) // Force re-render to clear drag states
         }
       }
@@ -153,8 +151,8 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
         
         try {
           const newPlayer = new window.YT.Player(container, {
-            height: '390',
-            width: '640',
+            height: YOUTUBE.PLAYER_HEIGHT.toString(),
+            width: YOUTUBE.PLAYER_WIDTH.toString(),
             videoId: videoId,
             playerVars: {
               playsinline: 1,
@@ -167,6 +165,15 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
                 setCurrentSongIndex(index)
                 setErrorMessage('')
                 setIsPlaying(true)
+                // On mobile, explicitly call playVideo() to ensure playback starts
+                // Mobile browsers require explicit playVideo() call even with autoplay: 1
+                if (isMobile && event.target && event.target.playVideo) {
+                  try {
+                    event.target.playVideo()
+                  } catch (error) {
+                    console.warn('Failed to play video on mobile:', error)
+                  }
+                }
               },
               onStateChange: (event) => {
                 if (event.data === 0) {
@@ -189,8 +196,8 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
           setErrorMessage('Error initializing video player. Please refresh the page and try again.')
           playerInitializedRef.current = false
         }
-      }, 200)
-      return
+        }, TIME_LIMITS.PLAYER_INIT_DELAY)
+        return
     }
     
     // Player exists, load and play the video
@@ -201,11 +208,20 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
         setCurrentSongIndex(index)
         setErrorMessage('')
         setIsPlaying(true)
+        // On mobile, explicitly call playVideo() to ensure playback starts
+        // Mobile browsers may not auto-play after loadVideoById()
+        if (isMobile && player.playVideo) {
+          try {
+            player.playVideo()
+          } catch (error) {
+            console.warn('Failed to play video on mobile:', error)
+          }
+        }
       } catch (error) {
         setErrorMessage('Error loading video. Please try again.')
       }
     }
-  }, [setList, player, apiReady])
+  }, [setList, player, apiReady, isMobile])
 
   // Update playSongAtIndex ref whenever the function changes
   useEffect(() => {
@@ -239,7 +255,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
               playSongAtIndexRef.current(prevIndex + 1)
             }
           }
-        }, 1000)
+        }, TIME_LIMITS.API_TIMEOUT)
       } else {
         // Last song finished - show completion message
         setIsPlaying(false)
@@ -393,8 +409,6 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       setErrorMessage('Set list is empty. Add songs to the set list before saving.')
       return
     }
-    console.log('[Save Modal] Opening save modal - current loadedSetListId:', loadedSetListId)
-    console.log('[Save Modal] Current set list has', setList.length, 'songs')
     setSetListName('')
     setSaveModalError('')
     setShowSaveModal(true)
@@ -414,13 +428,11 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       return
     }
 
-    if (trimmedName.length > 50) {
-      setSaveModalError('Set list name cannot exceed 50 characters.')
+    if (trimmedName.length > STRING_LIMITS.SET_LIST_NAME) {
+      setSaveModalError(`Set list name cannot exceed ${STRING_LIMITS.SET_LIST_NAME} characters.`)
       return
     }
 
-    console.log('[Save Handler] Current loadedSetListId:', loadedSetListId)
-    console.log('[Save Handler] Current savedSetLists count:', savedSetLists.length)
 
     // Check for duplicate name (unless it's the currently loaded set list)
     const existing = savedSetLists.find(list => 
@@ -428,7 +440,6 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       list.id !== loadedSetListId
     )
     
-    console.log('[Save Handler] Duplicate check - existing:', existing ? `Found "${existing.name}" (ID: ${existing.id})` : 'No duplicate found')
     
     if (existing) {
       setSaveModalError('A set list with this name already exists. Please choose a different name.')
@@ -443,39 +454,28 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       const loadedSetList = savedSetLists.find(list => list.id === loadedSetListId)
       if (loadedSetList && loadedSetList.name.toLowerCase() === trimmedName.toLowerCase()) {
         // Same name as loaded set list - update it
-        console.log('[Save Handler] UPDATING existing set list (ID:', loadedSetListId, ') - same name')
         saved = updateSavedSetList(loadedSetListId, trimmedName, setList)
-        console.log('[Save Handler] Update result:', saved ? `Success (ID: ${saved.id})` : 'Failed')
       } else {
         // Different name - create new set list
-        console.log('[Save Handler] CREATING new set list - different name from loaded set list')
         saved = saveSavedSetList(trimmedName, setList)
-        console.log('[Save Handler] Create result:', saved ? `Success (ID: ${saved.id})` : 'Failed')
         // Clear loadedSetListId since we're creating a new one
         setLoadedSetListId(null)
-        console.log('[Save Handler] Cleared loadedSetListId (creating new set list)')
       }
     } else {
       // Create new
-      console.log('[Save Handler] CREATING new set list')
       saved = saveSavedSetList(trimmedName, setList)
-      console.log('[Save Handler] Create result:', saved ? `Success (ID: ${saved.id})` : 'Failed')
     }
 
     if (saved) {
       // Reload saved set lists
-      console.log('[Save Handler] Reloading saved set lists...')
       const updated = loadSavedSetLists()
-      console.log('[Save Handler] Reloaded count:', updated.length)
       setSavedSetLists(updated)
       
       // Only track loadedSetListId if we updated an existing set list (same name)
       // If we created a new one, don't track it (allow user to create more new ones)
       if (loadedSetListId && updated.find(list => list.id === loadedSetListId && list.name.toLowerCase() === trimmedName.toLowerCase())) {
-        console.log('[Save Handler] Keeping loadedSetListId:', loadedSetListId, '(updated existing)')
         // loadedSetListId already set, keep it
       } else {
-        console.log('[Save Handler] Cleared loadedSetListId (created new set list)')
         setLoadedSetListId(null)
       }
       
@@ -486,7 +486,6 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
         setSuccessMessage('')
       }, 3000)
     } else {
-      console.error('[Save Handler] Save/update failed!')
       setSaveModalError('Failed to save set list. Please try again.')
     }
   }
@@ -499,10 +498,8 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   }
 
   const handleLoadSavedSetList = (savedSetList) => {
-    console.log('[Load Handler] Loading saved set list:', savedSetList.name, '(ID:', savedSetList.id, ')')
     setSetList(savedSetList.songs)
     setLoadedSetListId(savedSetList.id)
-    console.log('[Load Handler] Set loadedSetListId to:', savedSetList.id)
     setShowSavedSetListsDropdown(false)
     setErrorMessage('')
   }
@@ -634,9 +631,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
                   No saved set lists
                 </div>
               ) : (
-                (() => {
-                  console.log('Rendering saved set lists dropdown:', savedSetLists.length, 'items')
-                  return savedSetLists.map((savedSetList) => (
+                savedSetLists.map((savedSetList) => (
                   <div
                     key={savedSetList.id}
                     className="saved-set-list-item"
@@ -657,7 +652,6 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
                     </button>
                   </div>
                 ))
-                })()
               )}
             </div>
           )}
@@ -668,7 +662,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       <DragDropContext onDragEnd={handleDragEnd}>
         <div ref={setListContainerRef} className="set-list-container">
           {/* Left column - Saved loops */}
-          <div>
+          <div className="saved-loops-column">
             <h2 className="set-list-column-title">
               Saved Loops
             </h2>
@@ -751,7 +745,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
           </div>
 
           {/* Right column - Set list */}
-          <div>
+          <div className="set-list-column-wrapper">
             <h2 className="set-list-column-title">
               Set List
             </h2>
@@ -856,7 +850,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
                   setSetListName(e.target.value)
                   setSaveModalError('')
                 }}
-                maxLength={50}
+                maxLength={STRING_LIMITS.SET_LIST_NAME}
                 style={{
                   width: '100%',
                   padding: '10px',

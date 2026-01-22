@@ -2709,6 +2709,15 @@ input[type="range"]:focus-visible {
     overflow-x: hidden;
   }
   
+  /* Reorder columns on mobile: Set List appears above Saved Loops */
+  .saved-loops-column {
+    order: 2;
+  }
+  
+  .set-list-column-wrapper {
+    order: 1;
+  }
+  
   .set-list-column {
     max-width: 100%;
     width: 100%;
