@@ -1649,16 +1649,30 @@ function App() {
         <div className="input-group">
           <label htmlFor="search-query">Search for a song</label>
           <div className="search-input-wrapper">
-            <input
-              id="search-query"
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleSearchKeyPress}
-              onKeyDown={(e) => handleInputKeyDown(e, setSearchQuery)}
-              placeholder="Type song name or artist..."
-              className="search-input"
-            />
+            <div className="search-input-container">
+              <input
+                id="search-query"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
+                onKeyDown={(e) => handleInputKeyDown(e, setSearchQuery)}
+                placeholder="Type song name or artist..."
+                className="search-input"
+                autoComplete="off"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="clear-input-button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search input"
+                  title="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
             <button
               type="button"
               className="btn btn-search"
@@ -2031,7 +2045,6 @@ function App() {
           onFocus={() => setShowRecentVideos(false)}
           placeholder="Enter URL or Video ID of song from YouTube"
           disabled={!apiReady}
-          autoFocus
           aria-invalid={!!validationError}
           aria-describedby={validationError ? "video-id-error" : undefined}
           aria-errormessage={validationError ? "video-id-error" : undefined}
