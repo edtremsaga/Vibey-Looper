@@ -36,6 +36,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   const savedSetListsDropdownRef = useRef(null)
   const savedSetListsButtonRef = useRef(null)
   const setListContainerRef = useRef(null)
+  const setListLengthRef = useRef(setList.length) // Track current setList length
 
   // Load saved loops and set list on mount
   useEffect(() => {
@@ -49,6 +50,8 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   // Save set list to localStorage whenever it changes
   useEffect(() => {
     saveSetList(setList)
+    // Update ref whenever setList changes
+    setListLengthRef.current = setList.length
   }, [setList])
 
   // Load saved set lists on mount
@@ -233,8 +236,11 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
     setCurrentSongIndex((prevIndex) => {
       if (prevIndex === null) return null
       
+      // Use ref to get current setList length (always up-to-date)
+      const currentSetListLength = setListLengthRef.current
+      
       // If there's a next song, start 5-second countdown
-      if (prevIndex < setList.length - 1) {
+      if (prevIndex < currentSetListLength - 1) {
         setIsPlaying(false)
         
         if (countdownIntervalRef.current) {
@@ -272,7 +278,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       }
       return prevIndex
     })
-  }, [setList.length])
+  }, []) // No dependencies needed - we use ref for current length
 
   // Handle drag end
   const handleDragEnd = (result) => {
