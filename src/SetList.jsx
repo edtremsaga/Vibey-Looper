@@ -255,7 +255,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
               playSongAtIndexRef.current(prevIndex + 1)
             }
           }
-        }, TIME_LIMITS.API_TIMEOUT)
+        }, 1000) // Count down every 1 second (1000ms)
       } else {
         // Last song finished - show completion message
         setIsPlaying(false)
