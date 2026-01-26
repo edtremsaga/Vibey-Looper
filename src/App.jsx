@@ -564,7 +564,7 @@ function App() {
         })
       } catch (error) {
         setIsLoading(false)
-        setValidationError('Error initializing video player. Please refresh the page and try again.')
+        setValidationError('Video player failed to load. Please refresh the page (F5 or Cmd+R) to reload the player.')
         playerInitializedRef.current = false
       }
     }, TIME_LIMITS.PLAYER_INIT_DELAY)
@@ -670,7 +670,7 @@ function App() {
         }, 1000)
       } catch (error) {
         setIsLoading(false)
-        setValidationError('Error loading video. Please check the URL or Video ID and try again.')
+        setValidationError('Failed to load video. Please check the URL or Video ID and try again. You can also use the search box above to find videos.')
         // Clear flags on error
         loadingFromRecentVideoRef.current = false
       }
@@ -783,18 +783,18 @@ function App() {
   useEffect(() => {
     // Check basic range validation
     if (endTime <= startTime) {
-      setValidationError('End time must be greater than start time')
+      setValidationError('End time must be after start time. Use the "Set from Video" buttons to capture times accurately.')
       return
     }
     
     // Check against video duration if available
     if (videoDuration && videoDuration > 0) {
       if (startTime >= videoDuration) {
-        setValidationError(`Start time must be less than video duration (${secondsToMMSS(videoDuration)})`)
+        setValidationError(`Start time must be before the video ends (${secondsToMMSS(videoDuration)}). Use the "Set from Video" button to capture the exact time.`)
         return
       }
       if (endTime > videoDuration) {
-        setValidationError(`End time cannot exceed video duration (${secondsToMMSS(videoDuration)})`)
+        setValidationError(`End time cannot be after the video ends (${secondsToMMSS(videoDuration)}). Use the "Set from Video" button to capture the exact time.`)
         return
       }
     }
@@ -984,7 +984,7 @@ function App() {
       setIsPlaying(true)
     } catch (error) {
       console.error('Error starting video:', error)
-      setValidationError('Failed to start video. Please try again.')
+      setValidationError('Failed to start video. Make sure the video is loaded and try again. If the problem persists, refresh the page.')
       setIsPlaying(false)
     }
   }, [player, validationError, endTime, startTime, playbackSpeed])
@@ -1025,7 +1025,7 @@ function App() {
             player.playVideo()
           } catch (error) {
             console.warn('Failed to resume video:', error)
-            setValidationError('Failed to resume video. Please try again.')
+            setValidationError('Failed to resume video. Try clicking "Start Loop" again, or refresh the page if the problem continues.')
             return
           }
         }
@@ -1034,7 +1034,7 @@ function App() {
       }
     } catch (error) {
       console.error('Error in handleStop:', error)
-      setValidationError('An error occurred. Please try again.')
+      setValidationError('An error occurred. Please try again. If the problem persists, refresh the page.')
     }
   }, [player, isPlaying])
 
@@ -1073,7 +1073,7 @@ function App() {
             player.seekTo(seekTime, true)
           } catch (error) {
             console.warn('Failed to seek video on reset:', error)
-            setValidationError('Failed to reset video position. Please try again.')
+            setValidationError('Failed to reset video position. Try clicking "Reset Loop" again, or manually seek to the start time.')
             return
           }
         }
@@ -1081,7 +1081,7 @@ function App() {
       setIsPlaying(false)
     } catch (error) {
       console.error('Error in handleReset:', error)
-      setValidationError('An error occurred while resetting. Please try again.')
+      setValidationError('An error occurred while resetting. Please try again. If the problem persists, refresh the page.')
     }
   }, [player, startTime])
 
@@ -1138,7 +1138,7 @@ function App() {
   const handleDeleteRecentVideo = useCallback((videoId, videoTitle) => {
     // Check if this is the default video
     if (userDefaultVideo && userDefaultVideo.videoId === videoId) {
-      setValidationError('Cannot delete the default video. Remove it as default first.')
+      setValidationError('Cannot delete the default video. Click the star (★) button to remove it as default first, then you can delete it.')
       return
     }
     
@@ -1183,7 +1183,7 @@ function App() {
   const handleSetAsDefault = useCallback(async () => {
     const extractedId = extractVideoId(videoId)
     if (!extractedId || extractedId.length !== 11) {
-      setValidationError('Please load a valid video first')
+      setValidationError('Please load a valid video first. Paste a YouTube URL, enter a Video ID, or use the search box above.')
       return
     }
     
@@ -1236,12 +1236,12 @@ function App() {
   const handleSaveLoop = useCallback(() => {
     const extractedId = extractVideoId(videoId)
     if (!extractedId || extractedId.length !== 11) {
-      setValidationError('Invalid video. Please load a valid YouTube video first.')
+      setValidationError('Invalid video. Please load a valid YouTube video first. You can paste a URL, enter a Video ID, or use the search box above.')
       return
     }
 
     if (endTime <= startTime) {
-      setValidationError('End time must be greater than start time.')
+      setValidationError('End time must be after start time. Use the "Set from Video" buttons to set your loop times.')
       return
     }
 
@@ -1270,7 +1270,7 @@ function App() {
       setValidationError('') // Clear any errors
       // Could show a success message here
     } else {
-      setValidationError('Failed to save loop. Please try again.')
+      setValidationError('Failed to save loop. Make sure you have a valid video loaded and try again. If the problem continues, refresh the page.')
     }
   }, [videoId, startTime, endTime, targetLoops, playbackSpeed, videoTitle, videoAuthor, videoThumbnail])
 

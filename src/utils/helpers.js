@@ -1,4 +1,5 @@
 // Helper functions for time conversion and video ID extraction
+import { TIME_LIMITS } from './constants.js'
 
 // Convert seconds to MM:SS format
 export const secondsToMMSS = (seconds) => {
@@ -49,7 +50,7 @@ export const mmssToSeconds = (input) => {
   
   // Security: Maximum reasonable value (24 hours = 86400 seconds)
   // This prevents DoS attacks via extremely large time values
-  const MAX_SECONDS = 86400
+  const MAX_SECONDS = TIME_LIMITS.MAX_SECONDS
   
   const trimmed = input.trim()
   
@@ -122,16 +123,16 @@ export const extractVideoId = (input) => {
 export const getYouTubeErrorMessage = (errorCode) => {
   switch (errorCode) {
     case 2:
-      return 'Invalid video ID. Please check the URL or Video ID.'
+      return 'Invalid video ID. Please check the URL or Video ID. You can also use the search box above to find videos.'
     case 5:
-      return 'The HTML5 player cannot be found. Please refresh the page.'
+      return 'Video player error. Please refresh the page (F5 or Cmd+R) to reload the player.'
     case 100:
-      return 'Video not found. It may have been removed or made private.'
+      return 'Video not found. The video may have been removed, made private, or the URL is incorrect. Try searching for the video using the search box above, or check the URL.'
     case 101:
     case 150:
-      return 'Video is not available for embedding. It may be private or restricted.'
+      return 'Video is not available. This video is private or restricted and cannot be played. Try a different video that is publicly available.'
     default:
-      return 'Failed to load video. Please check the URL or Video ID and try again.'
+      return 'Failed to load video. Please check the URL or Video ID and try again. You can also use the search box above to find videos.'
   }
 }
 
