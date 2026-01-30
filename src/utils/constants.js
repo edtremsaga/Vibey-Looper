@@ -14,6 +14,7 @@ export const TIME_LIMITS = {
   MAX_SECONDS: 86400,     // 24 hours maximum
   API_TIMEOUT: 5000,      // 5 seconds for API requests
   DURATION_DELAY: 500,    // Delay to get video duration
+  DURATION_TOLERANCE: 1,  // Tolerance when comparing end time to video duration (YouTube API can differ from UI by ~1s)
   PLAYER_INIT_DELAY: 200, // Delay for player initialization
   CHECK_INTERVAL_FAR: 500, // Check interval when far from end (5+ seconds)
   CHECK_INTERVAL_NEAR: 100, // Check interval when near end (<5 seconds)

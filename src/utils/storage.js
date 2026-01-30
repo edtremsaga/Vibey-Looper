@@ -1,5 +1,6 @@
 // Helper functions for localStorage operations
 import { extractVideoId } from './helpers.js'
+import { STRING_LIMITS, TIME_LIMITS, LOOP_LIMITS } from './constants.js'
 
 // Helper function to save recent video to localStorage
 // Security: Validates inputs before saving to prevent invalid data storage
@@ -15,10 +16,10 @@ export const saveRecentVideo = (videoId, title = '', author = '', thumbnail = ''
     // Sanitize inputs before saving
     const sanitized = {
       videoId, // Already validated above
-      title: typeof title === 'string' ? title.substring(0, 200) : '',
-      author: typeof author === 'string' ? author.substring(0, 100) : '',
+      title: typeof title === 'string' ? title.substring(0, STRING_LIMITS.TITLE) : '',
+      author: typeof author === 'string' ? author.substring(0, STRING_LIMITS.AUTHOR) : '',
       thumbnail: typeof thumbnail === 'string' && thumbnail.startsWith('https://')
-        ? thumbnail.substring(0, 500)
+        ? thumbnail.substring(0, STRING_LIMITS.THUMBNAIL)
         : '',
       timestamp: Date.now()
     }
@@ -27,7 +28,7 @@ export const saveRecentVideo = (videoId, title = '', author = '', thumbnail = ''
     const newRecent = [
       sanitized,
       ...recent.filter(v => v.videoId !== videoId)
-    ].slice(0, 100) // Keep last 100
+    ].slice(0, LOOP_LIMITS.MAX_SAVED_LOOPS) // Keep last 100
     localStorage.setItem('recentVideos', JSON.stringify(newRecent))
     return newRecent
   } catch (error) {
@@ -48,25 +49,25 @@ const validateRecentVideo = (video) => {
     return null
   }
   
-  // Return validated and sanitized video object
-  // Optional fields with defaults and length limits (truncate if too long)
-  return {
-    videoId: video.videoId, // Already validated above
-    title: typeof video.title === 'string' && video.title.length > 0
-      ? video.title.substring(0, 200) // Truncate to 200 chars
-      : '',
-    author: typeof video.author === 'string' && video.author.length > 0
-      ? video.author.substring(0, 100) // Truncate to 100 chars
-      : '',
-    thumbnail: typeof video.thumbnail === 'string' && 
-               video.thumbnail.length > 0 &&
-               video.thumbnail.startsWith('https://')
-      ? video.thumbnail.substring(0, 500) // Truncate to 500 chars
-      : '',
-    timestamp: typeof video.timestamp === 'number' && video.timestamp > 0
-      ? video.timestamp
-      : Date.now() // Default to current time if invalid
-  }
+    // Return validated and sanitized video object
+    // Optional fields with defaults and length limits (truncate if too long)
+    return {
+      videoId: video.videoId, // Already validated above
+      title: typeof video.title === 'string' && video.title.length > 0
+        ? video.title.substring(0, STRING_LIMITS.TITLE) // Truncate to 200 chars
+        : '',
+      author: typeof video.author === 'string' && video.author.length > 0
+        ? video.author.substring(0, STRING_LIMITS.AUTHOR) // Truncate to 100 chars
+        : '',
+      thumbnail: typeof video.thumbnail === 'string' && 
+                 video.thumbnail.length > 0 &&
+                 video.thumbnail.startsWith('https://')
+        ? video.thumbnail.substring(0, STRING_LIMITS.THUMBNAIL) // Truncate to 500 chars
+        : '',
+      timestamp: typeof video.timestamp === 'number' && video.timestamp > 0
+        ? video.timestamp
+        : Date.now() // Default to current time if invalid
+    }
 }
 
 // Helper function to load recent videos from localStorage
@@ -86,7 +87,7 @@ export const loadRecentVideos = () => {
     const validated = data
       .map(validateRecentVideo)
       .filter(video => video !== null) // Remove invalid entries
-      .slice(0, 100) // Enforce maximum limit
+      .slice(0, LOOP_LIMITS.MAX_SAVED_LOOPS) // Enforce maximum limit
     
     // Log if entries were filtered out (for debugging)
     if (validated.length < data.length) {
@@ -139,11 +140,11 @@ export const saveDefaultVideo = (videoId, title = '', author = '', thumbnail = '
     // Sanitize inputs before saving
     const defaultVideo = {
       videoId: extractedId, // Already validated above
-      url: videoId.trim().substring(0, 500), // Sanitize URL length
-      title: typeof title === 'string' ? title.substring(0, 200) : '',
-      author: typeof author === 'string' ? author.substring(0, 100) : '',
+      url: videoId.trim().substring(0, STRING_LIMITS.URL), // Sanitize URL length
+      title: typeof title === 'string' ? title.substring(0, STRING_LIMITS.TITLE) : '',
+      author: typeof author === 'string' ? author.substring(0, STRING_LIMITS.AUTHOR) : '',
       thumbnail: typeof thumbnail === 'string' && thumbnail.startsWith('https://')
-        ? thumbnail.substring(0, 500)
+        ? thumbnail.substring(0, STRING_LIMITS.THUMBNAIL)
         : '',
       timestamp: Date.now()
     }
@@ -176,17 +177,17 @@ const validateDefaultVideo = (video) => {
   // Return validated and sanitized default video object
   return {
     videoId: video.videoId, // Already validated above
-    url: video.url.trim().substring(0, 500), // Sanitize URL length
+    url: video.url.trim().substring(0, STRING_LIMITS.URL), // Sanitize URL length
     title: typeof video.title === 'string' && video.title.length > 0
-      ? video.title.substring(0, 200) // Truncate to 200 chars
+      ? video.title.substring(0, STRING_LIMITS.TITLE) // Truncate to 200 chars
       : '',
     author: typeof video.author === 'string' && video.author.length > 0
-      ? video.author.substring(0, 100) // Truncate to 100 chars
+      ? video.author.substring(0, STRING_LIMITS.AUTHOR) // Truncate to 100 chars
       : '',
     thumbnail: typeof video.thumbnail === 'string' && 
                video.thumbnail.length > 0 &&
                video.thumbnail.startsWith('https://')
-      ? video.thumbnail.substring(0, 500) // Truncate to 500 chars
+      ? video.thumbnail.substring(0, STRING_LIMITS.THUMBNAIL) // Truncate to 500 chars
       : '',
     timestamp: typeof video.timestamp === 'number' && video.timestamp > 0
       ? video.timestamp
@@ -255,19 +256,19 @@ const validateSavedLoop = (loop) => {
   }
   
   // Start time: must be number, 0-86400 (24 hours max)
-  const startTime = typeof loop.startTime === 'number' && loop.startTime >= 0 && loop.startTime <= 86400
+  const startTime = typeof loop.startTime === 'number' && loop.startTime >= 0 && loop.startTime <= TIME_LIMITS.MAX_SECONDS
     ? loop.startTime
     : null
   if (startTime === null) return null
   
   // End time: must be number, 0-86400, and > startTime
-  const endTime = typeof loop.endTime === 'number' && loop.endTime > startTime && loop.endTime <= 86400
+  const endTime = typeof loop.endTime === 'number' && loop.endTime > startTime && loop.endTime <= TIME_LIMITS.MAX_SECONDS
     ? loop.endTime
     : null
   if (endTime === null) return null
   
   // Target loops: must be number, 1-10000
-  const targetLoops = typeof loop.targetLoops === 'number' && loop.targetLoops >= 1 && loop.targetLoops <= 10000
+  const targetLoops = typeof loop.targetLoops === 'number' && loop.targetLoops >= 1 && loop.targetLoops <= LOOP_LIMITS.MAX_LOOPS
     ? loop.targetLoops
     : null
   if (targetLoops === null) return null
@@ -275,10 +276,10 @@ const validateSavedLoop = (loop) => {
   // Return validated and sanitized saved loop object
   return {
     id: typeof loop.id === 'string' && loop.id.length > 0
-      ? loop.id.substring(0, 100) // Unique ID
+      ? loop.id.substring(0, STRING_LIMITS.ID) // Unique ID
       : `${loop.videoId}-${Date.now()}`, // Generate ID if missing
     videoId: loop.videoId, // Already validated above
-    url: loop.url.trim().substring(0, 500), // Sanitize URL length
+    url: loop.url.trim().substring(0, STRING_LIMITS.URL), // Sanitize URL length
     startTime, // Already validated above
     endTime, // Already validated above
     targetLoops, // Already validated above
@@ -286,15 +287,15 @@ const validateSavedLoop = (loop) => {
       ? loop.playbackSpeed
       : 1, // Default to 1x if invalid
     title: typeof loop.title === 'string' && loop.title.length > 0
-      ? loop.title.substring(0, 200) // Truncate to 200 chars
+      ? loop.title.substring(0, STRING_LIMITS.TITLE) // Truncate to 200 chars
       : '',
     author: typeof loop.author === 'string' && loop.author.length > 0
-      ? loop.author.substring(0, 100) // Truncate to 100 chars
+      ? loop.author.substring(0, STRING_LIMITS.AUTHOR) // Truncate to 100 chars
       : '',
     thumbnail: typeof loop.thumbnail === 'string' && 
                loop.thumbnail.length > 0 &&
                loop.thumbnail.startsWith('https://')
-      ? loop.thumbnail.substring(0, 500) // Truncate to 500 chars
+      ? loop.thumbnail.substring(0, STRING_LIMITS.THUMBNAIL) // Truncate to 500 chars
       : '',
     timestamp: typeof loop.timestamp === 'number' && loop.timestamp > 0
       ? loop.timestamp
@@ -320,18 +321,18 @@ export const saveSavedLoop = (videoId, startTime, endTime, targetLoops, playback
     }
     
     // Validate times
-    if (typeof startTime !== 'number' || startTime < 0 || startTime > 86400) {
+    if (typeof startTime !== 'number' || startTime < 0 || startTime > TIME_LIMITS.MAX_SECONDS) {
       console.warn('Invalid startTime provided to saveSavedLoop:', startTime)
       return null
     }
     
-    if (typeof endTime !== 'number' || endTime <= startTime || endTime > 86400) {
+    if (typeof endTime !== 'number' || endTime <= startTime || endTime > TIME_LIMITS.MAX_SECONDS) {
       console.warn('Invalid endTime provided to saveSavedLoop:', endTime)
       return null
     }
     
     // Validate target loops
-    if (typeof targetLoops !== 'number' || targetLoops < 1 || targetLoops > 10000) {
+    if (typeof targetLoops !== 'number' || targetLoops < 1 || targetLoops > LOOP_LIMITS.MAX_LOOPS) {
       console.warn('Invalid targetLoops provided to saveSavedLoop:', targetLoops)
       return null
     }
@@ -345,15 +346,15 @@ export const saveSavedLoop = (videoId, startTime, endTime, targetLoops, playback
     const savedLoop = {
       id: `${extractedId}-${Date.now()}`, // Unique ID
       videoId: extractedId,
-      url: videoId.trim().substring(0, 500),
+      url: videoId.trim().substring(0, STRING_LIMITS.URL),
       startTime,
       endTime,
       targetLoops,
       playbackSpeed,
-      title: typeof title === 'string' ? title.substring(0, 200) : '',
-      author: typeof author === 'string' ? author.substring(0, 100) : '',
+      title: typeof title === 'string' ? title.substring(0, STRING_LIMITS.TITLE) : '',
+      author: typeof author === 'string' ? author.substring(0, STRING_LIMITS.AUTHOR) : '',
       thumbnail: typeof thumbnail === 'string' && thumbnail.startsWith('https://')
-        ? thumbnail.substring(0, 500)
+        ? thumbnail.substring(0, STRING_LIMITS.THUMBNAIL)
         : '',
       timestamp: Date.now()
     }
@@ -362,7 +363,7 @@ export const saveSavedLoop = (videoId, startTime, endTime, targetLoops, playback
     const savedLoops = JSON.parse(localStorage.getItem('savedLoops') || '[]')
     
     // Add new loop to the beginning (most recent first)
-    const newSavedLoops = [savedLoop, ...savedLoops].slice(0, 100) // Keep max 100 saved loops
+    const newSavedLoops = [savedLoop, ...savedLoops].slice(0, LOOP_LIMITS.MAX_SAVED_LOOPS) // Keep max 100 saved loops
     
     localStorage.setItem('savedLoops', JSON.stringify(newSavedLoops))
     return savedLoop
@@ -388,7 +389,7 @@ export const loadSavedLoops = () => {
     const validated = data
       .map(validateSavedLoop)
       .filter(loop => loop !== null) // Remove invalid entries
-      .slice(0, 100) // Enforce maximum limit
+      .slice(0, LOOP_LIMITS.MAX_SAVED_LOOPS) // Enforce maximum limit
     
     // Log if entries were filtered out (for debugging)
     if (validated.length < data.length) {
@@ -516,16 +517,15 @@ const validateSavedSetList = (savedSetList, index) => {
   
   // Return validated and sanitized saved set list object
   const validated = {
-    id: savedSetList.id.substring(0, 100), // Sanitize ID length
-    name: savedSetList.name.trim().substring(0, 50), // Sanitize name (max 50 chars)
+    id: savedSetList.id.substring(0, STRING_LIMITS.ID), // Sanitize ID length
+    name: savedSetList.name.trim().substring(0, STRING_LIMITS.SET_LIST_NAME), // Sanitize name (max 50 chars)
     songs: validatedSongs,
     createdAt: typeof savedSetList.createdAt === 'number' && savedSetList.createdAt > 0
       ? savedSetList.createdAt
       : Date.now() // Default to current time if invalid
   }
   
-  console.log(`[Validation] Item ${index} (${validated.name}): PASSED - ${validatedSongs.length} songs`)
-  return validated
+    return validated
 }
 
 // Helper function to save a named set list to localStorage
@@ -539,7 +539,7 @@ export const saveSavedSetList = (name, songs) => {
     }
     
     // Validate and sanitize name (max 50 characters)
-    const sanitizedName = name.trim().substring(0, 50)
+    const sanitizedName = name.trim().substring(0, STRING_LIMITS.SET_LIST_NAME)
     
     // Validate songs array
     if (!Array.isArray(songs) || songs.length === 0) {
@@ -567,13 +567,10 @@ export const saveSavedSetList = (name, songs) => {
     
     // Load existing saved set lists
     const savedSetLists = JSON.parse(localStorage.getItem('savedSetLists') || '[]')
-    console.log(`[Save] Current saved set lists: ${savedSetLists.length} items`)
-    console.log(`[Save] Saving new set list: "${savedSetList.name}" with ${validatedSongs.length} songs (ID: ${savedSetList.id})`)
     
     // Add new set list to the beginning (most recent first)
-    const newSavedSetLists = [savedSetList, ...savedSetLists].slice(0, 100) // Keep max 100 saved set lists
+    const newSavedSetLists = [savedSetList, ...savedSetLists].slice(0, LOOP_LIMITS.MAX_SET_LISTS) // Keep max 100 saved set lists
     
-    console.log(`[Save] After adding new item: ${newSavedSetLists.length} total items (max 100)`)
     localStorage.setItem('savedSetLists', JSON.stringify(newSavedSetLists))
     return savedSetList
   } catch (error) {
@@ -648,10 +645,7 @@ export const updateSavedSetList = (id, name, songs) => {
 export const loadSavedSetLists = () => {
   try {
     const rawData = localStorage.getItem('savedSetLists')
-    console.log('[Load] Raw localStorage data:', rawData ? `Found ${rawData.length} characters` : 'null')
-    
     const data = JSON.parse(rawData || '[]')
-    console.log('[Load] Parsed data:', Array.isArray(data) ? `${data.length} items` : 'not an array')
     
     // Validate that data is an array
     if (!Array.isArray(data)) {
@@ -659,22 +653,16 @@ export const loadSavedSetLists = () => {
       return []
     }
     
-    console.log(`[Load] Starting validation of ${data.length} items...`)
-    
     // Validate and filter out invalid entries
     const validated = data
       .map((setList, index) => validateSavedSetList(setList, index))
       .filter(setList => setList !== null) // Remove invalid entries
-      .slice(0, 100) // Enforce maximum limit
+      .slice(0, LOOP_LIMITS.MAX_SET_LISTS) // Enforce maximum limit
     
     // Log if entries were filtered out (for debugging)
     if (validated.length < data.length) {
       console.warn(`[Load] Filtered out ${data.length - validated.length} invalid saved set list entries (${validated.length} valid items remain)`)
-    } else {
-      console.log(`[Load] All ${validated.length} items passed validation`)
     }
-    
-    console.log('[Load] Final validated list:', validated.map(item => `${item.name} (${item.songs.length} songs, ID: ${item.id})`))
     
     return validated
   } catch (error) {
