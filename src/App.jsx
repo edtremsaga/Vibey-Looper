@@ -1781,12 +1781,18 @@ function App() {
                     aria-label="Saved loops"
                   >
                   {savedLoops.map((loop, index) => (
-                    <button
+                    <div
                       key={loop.id || index}
-                      type="button"
+                      role="menuitem"
+                      tabIndex={0}
                       className="saved-loop-item"
                       onClick={() => handleLoadSavedLoop(loop)}
-                      role="menuitem"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleLoadSavedLoop(loop)
+                        }
+                      }}
                     >
                       {loop.thumbnail && (
                         <img 
@@ -1819,7 +1825,7 @@ function App() {
                       >
                         ×
                       </button>
-                    </button>
+                    </div>
                   ))}
                   </div>
                 </>
@@ -1855,12 +1861,18 @@ function App() {
                 {recentVideos.map((video, index) => {
                   const isDefault = userDefaultVideo && userDefaultVideo.videoId === video.videoId
                   return (
-                    <button
+                    <div
                       key={index}
-                      type="button"
+                      role="menuitem"
+                      tabIndex={0}
                       className={`recent-video-item ${isDefault ? 'is-default' : ''}`}
                       onClick={() => handleRecentVideoSelect(video)}
-                      role="menuitem"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleRecentVideoSelect(video)
+                        }
+                      }}
                     >
                       {video.thumbnail && (
                         <img 
@@ -1894,7 +1906,7 @@ function App() {
                       >
                         ×
                       </button>
-                    </button>
+                    </div>
                   )
                 })}
                 </div>
@@ -1961,12 +1973,18 @@ function App() {
                     aria-label="Saved loops"
                   >
                     {savedLoops.map((loop, index) => (
-                      <button
+                      <div
                         key={loop.id || index}
-                        type="button"
+                        role="menuitem"
+                        tabIndex={0}
                         className="saved-loop-item"
                         onClick={() => handleLoadSavedLoop(loop)}
-                        role="menuitem"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            handleLoadSavedLoop(loop)
+                          }
+                        }}
                       >
                         {loop.thumbnail && (
                           <img 
@@ -1999,7 +2017,7 @@ function App() {
                         >
                           ×
                         </button>
-                      </button>
+                      </div>
                     ))}
                   </div>
                   </>
@@ -2035,12 +2053,18 @@ function App() {
                   {recentVideos.map((video, index) => {
                     const isDefault = userDefaultVideo && userDefaultVideo.videoId === video.videoId
                     return (
-                    <button
+                    <div
                       key={index}
-                      type="button"
+                      role="menuitem"
+                      tabIndex={0}
                       className={`recent-video-item ${isDefault ? 'is-default' : ''}`}
                       onClick={() => handleRecentVideoSelect(video)}
-                      role="menuitem"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleRecentVideoSelect(video)
+                        }
+                      }}
                     >
                       {video.thumbnail && (
                         <img 
@@ -2062,19 +2086,19 @@ function App() {
                           <span className="recent-video-id">{video.videoId}</span>
                         )}
                       </div>
-                        <button
-                          type="button"
-                          className="delete-button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteRecentVideo(video.videoId, video.title || `Video ${video.videoId}`)
-                          }}
-                          aria-label={`Delete recent video: ${video.title || video.videoId}`}
-                          title="Delete this recent video"
-                        >
-                          ×
-                        </button>
-                    </button>
+                      <button
+                        type="button"
+                        className="delete-button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteRecentVideo(video.videoId, video.title || `Video ${video.videoId}`)
+                        }}
+                        aria-label={`Delete recent video: ${video.title || video.videoId}`}
+                        title="Delete this recent video"
+                      >
+                        ×
+                      </button>
+                    </div>
                     )
                   })}
                 </div>
