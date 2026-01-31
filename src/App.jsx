@@ -83,6 +83,7 @@ const fetchVideoTitle = async (videoId) => {
 }
 
 function App() {
+  console.log('[Music Looper] App component rendering')
   // Load user's default video on mount, or use app default
   const [videoId, setVideoId] = useState(() => {
     const userDefault = loadDefaultVideo()
@@ -697,6 +698,26 @@ function App() {
             setVideoDuration(duration)
             videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
             
+            // Cap end/start time to new video duration when switching videos (avoid stale times from previous video)
+            if (!preserveEndTimeRef.current && !isLoadingSavedLoopRef.current && loadingFromSavedLoopRef.current === null) {
+              const durationMax = Math.floor(duration) + TIME_LIMITS.DURATION_TOLERANCE
+              const durationFloor = Math.floor(duration)
+              setEndTime(prev => {
+                if (prev > durationMax) {
+                  setEndTimeDisplay(secondsToMMSS(durationFloor))
+                  return durationFloor
+                }
+                return prev
+              })
+              setStartTime(prev => {
+                if (prev >= durationMax) {
+                  setStartTimeDisplay('0:00')
+                  return 0
+                }
+                return prev
+              })
+            }
+            
             // Clear isLoadingSavedLoopRef and loadingFromSavedLoopRef after setting duration
             // preserveEndTimeRef stays set until user action (starts loop, changes endTime, loads new video)
             if (isLoadingSavedLoopRef.current || loadingFromSavedLoopRef.current !== null) {
@@ -719,6 +740,26 @@ function App() {
                         console.warn('[Music Looper] set videoDuration (useEffect retry)', { duration: dur, videoId: extractedId, display: `${Math.floor(dur / 60)}:${String(Math.floor(dur % 60)).padStart(2, '0')}` })
                         setVideoDuration(dur)
                         videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
+                        
+                        // Cap end/start time to new video duration when switching videos (avoid stale times from previous video)
+                        if (!preserveEndTimeRef.current && !isLoadingSavedLoopRef.current && loadingFromSavedLoopRef.current === null) {
+                          const durationMaxRetry = Math.floor(dur) + TIME_LIMITS.DURATION_TOLERANCE
+                          const durationFloorRetry = Math.floor(dur)
+                          setEndTime(prev => {
+                            if (prev > durationMaxRetry) {
+                              setEndTimeDisplay(secondsToMMSS(durationFloorRetry))
+                              return durationFloorRetry
+                            }
+                            return prev
+                          })
+                          setStartTime(prev => {
+                            if (prev >= durationMaxRetry) {
+                              setStartTimeDisplay('0:00')
+                              return 0
+                            }
+                            return prev
+                          })
+                        }
                         
                         // Clear isLoadingSavedLoopRef and loadingFromSavedLoopRef after setting duration
                         // preserveEndTimeRef stays set until user action (starts loop, changes endTime, loads new video)
@@ -799,7 +840,13 @@ function App() {
     
     // Check against video duration if available (with 1s tolerance for YouTube API vs UI rounding)
     // Compare integer seconds to avoid float edge cases (e.g. 239.0 > 238.999999)
+    // Only use videoDuration if it belongs to the current video (avoids false "end time after video end" when loading a saved loop for a different video)
     if (videoDuration && videoDuration > 0) {
+      const currentExtractedId = extractVideoId(videoId)
+      if (videoDurationVideoIdRef.current !== currentExtractedId) {
+        setValidationError((prev) => (prev && prev.includes('video') ? '' : prev))
+        return
+      }
       const durationMax = Math.floor(videoDuration) + TIME_LIMITS.DURATION_TOLERANCE
       const startFloor = Math.floor(startTime)
       const endFloor = Math.floor(endTime)
