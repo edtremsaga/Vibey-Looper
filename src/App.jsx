@@ -83,7 +83,6 @@ const fetchVideoTitle = async (videoId) => {
 }
 
 function App() {
-  console.log('[Music Looper] App component rendering')
   // Load user's default video on mount, or use app default
   const [videoId, setVideoId] = useState(() => {
     const userDefault = loadDefaultVideo()
@@ -134,11 +133,6 @@ function App() {
   const lastAutoSetEndTimeVideoIdRef = useRef(null) // Track which video ID we've auto-set endTime for
   const videoDurationVideoIdRef = useRef(null) // Track which videoId the current videoDuration belongs to
   const savedLoopTimesRef = useRef({ startTime: null, endTime: null }) // Store saved loop times from last Start Loop click
-
-  // Diagnostic: runs once on load so we know the latest code is running (remove after debugging)
-  useEffect(() => {
-    console.warn('[Music Looper] app loaded — diagnostic logging enabled')
-  }, [])
 
   // Detect mobile device
   useEffect(() => {
@@ -458,7 +452,6 @@ function App() {
                 if (duration && duration > 0) {
                   const extractedId = extractVideoId(videoId)
                   if (extractedId && extractedId.length === 11) {
-                    console.warn('[Music Looper] set videoDuration (onReady)', { duration, videoId: extractedId, display: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}` })
                     setVideoDuration(duration)
                     videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
                   }
@@ -694,7 +687,6 @@ function App() {
         if (duration && duration > 0 && !isNaN(duration)) {
           const extractedId = extractVideoId(videoId)
           if (extractedId && extractedId.length === 11) {
-            console.warn('[Music Looper] set videoDuration (useEffect)', { duration, videoId: extractedId, display: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}` })
             setVideoDuration(duration)
             videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
             
@@ -737,7 +729,6 @@ function App() {
                     if (dur && dur > 0 && !isNaN(dur)) {
                       const extractedId = extractVideoId(videoId)
                       if (extractedId && extractedId.length === 11) {
-                        console.warn('[Music Looper] set videoDuration (useEffect retry)', { duration: dur, videoId: extractedId, display: `${Math.floor(dur / 60)}:${String(Math.floor(dur % 60)).padStart(2, '0')}` })
                         setVideoDuration(dur)
                         videoDurationVideoIdRef.current = extractedId // Track which video this duration belongs to
                         
@@ -830,8 +821,6 @@ function App() {
   // Validate times
   // Security: Validates time inputs against video duration and prevents invalid ranges
   useEffect(() => {
-    // Diagnostic: runs every time validation effect runs (remove after debugging)
-    console.warn('[Music Looper] validation effect ran', { videoDuration, startTime, endTime })
     // Check basic range validation
     if (endTime <= startTime) {
       setValidationError('End time must be after start time. Use the "Set from Video" buttons to capture times accurately.')
@@ -852,18 +841,6 @@ function App() {
       const endFloor = Math.floor(endTime)
       const startFails = startFloor >= durationMax
       const endFails = endFloor > durationMax
-      // Diagnostic: duration validation (filter console by "[Music Looper]")
-      console.warn('[Music Looper] duration validation', {
-        videoDurationRaw: videoDuration,
-        videoDurationDisplay: secondsToMMSS(videoDuration),
-        durationMax,
-        startTimeRaw: startTime,
-        startFloor,
-        endTimeRaw: endTime,
-        endFloor,
-        startFails,
-        endFails
-      })
       if (startFails) {
         setValidationError(`Start time must be before the video ends (${secondsToMMSS(videoDuration)}). Use the "Set from Video" button to capture the exact time.`)
         return
