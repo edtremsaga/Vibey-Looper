@@ -27,9 +27,11 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   const [showSavedSetListsDropdown, setShowSavedSetListsDropdown] = useState(false)
   const [loadedSetListId, setLoadedSetListId] = useState(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  const [playbackDelayDisplay, setPlaybackDelayDisplay] = useState('5')
   
   // Refs
   const playerRef = useRef(null)
+  const playbackDelayRef = useRef(5)
   const playerInitializedRef = useRef(false)
   const countdownIntervalRef = useRef(null)
   const playSongAtIndexRef = useRef(null)
@@ -53,6 +55,12 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
     // Update ref whenever setList changes
     setListLengthRef.current = setList.length
   }, [setList])
+
+  // Keep playback delay ref in sync for use in handleVideoEnd (parse display string; default 5 if empty/invalid)
+  useEffect(() => {
+    const n = parseInt(playbackDelayDisplay, 10)
+    playbackDelayRef.current = (!Number.isNaN(n) && n >= 1 && n <= 99) ? Math.min(99, Math.max(1, n)) : 5
+  }, [playbackDelayDisplay])
 
   // Load saved set lists on mount
   useEffect(() => {
@@ -239,7 +247,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       // Use ref to get current setList length (always up-to-date)
       const currentSetListLength = setListLengthRef.current
       
-      // If there's a next song, start 5-second countdown
+      // If there's a next song, start countdown (delay from playback interval field)
       if (prevIndex < currentSetListLength - 1) {
         setIsPlaying(false)
         
@@ -247,7 +255,8 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
           clearInterval(countdownIntervalRef.current)
         }
         
-        let remaining = 5
+        const delay = Math.min(99, Math.max(1, Math.floor(playbackDelayRef.current) || 5))
+        let remaining = delay
         setCountdown(remaining)
         
         countdownIntervalRef.current = setInterval(() => {
@@ -662,6 +671,25 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
             </div>
           )}
         </div>
+        <input
+          type="text"
+          inputMode="numeric"
+          size={2}
+          value={playbackDelayDisplay}
+          onChange={(e) => {
+            const raw = e.target.value
+            if (raw === '') {
+              setPlaybackDelayDisplay('')
+              return
+            }
+            const n = parseInt(raw, 10)
+            if (!Number.isNaN(n)) {
+              const clamped = Math.min(99, Math.max(1, n))
+              setPlaybackDelayDisplay(String(clamped))
+            }
+          }}
+          style={{ width: '3ch', minWidth: '36px', padding: '6px 6px', fontSize: '14px', textAlign: 'center', background: '#000', color: '#fff', border: '2px solid #fff' }}
+        />
       </div>
 
       {/* Two column layout */}
