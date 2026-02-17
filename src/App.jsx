@@ -1590,18 +1590,22 @@ function App() {
                       <li>Use the search box at the top to search for songs. Click "Search on YouTube" to open results in a new tab.</li>
                     )}
                     <li>Paste a YouTube URL or enter a Video ID directly in the input field below.</li>
+                    <li>Use the star (★) button next to a video to set it as your default; that video will load when you open the app. {isMobile ? 'Tap' : 'Click'} the star again to remove it as default. The default video cannot be removed from Recent until it is no longer set as default.</li>
                   </ul>
                 </li>
                 <li>
                   <strong>Set your loop times:</strong>
                   <ul>
-                    <li><strong>Start Time:</strong> Enter the start time in MM:SS format (e.g., "0:46" for 46 seconds, "1:02" for 1 minute 2 seconds), or {isMobile ? 'tap' : 'click'} the "Set" button next to the input to capture the current video playback time as the start time</li>
-                    <li><strong>End Time:</strong> Enter the end time in MM:SS format (e.g., "1:30" for 1 minute 30 seconds), or {isMobile ? 'tap' : 'click'} the "Set" button next to the input to capture the current video playback time as the end time</li>
-                    <li>To use the "Set" buttons: Play the video to the desired time, then {isMobile ? 'tap' : 'click'} the "Set" button to capture that time in the start time or end time.</li>
+                    <li><strong>Start Time:</strong> Enter the start time in MM:SS format (e.g., "0:46" for 46 seconds, "1:02" for 1 minute 2 seconds), or {isMobile ? 'tap' : 'click'} the "{isMobile ? 'Set' : 'Set from Video'}" button next to the input to capture the current video playback time as the start time</li>
+                    <li><strong>End Time:</strong> Enter the end time in MM:SS format (e.g., "1:30" for 1 minute 30 seconds), or {isMobile ? 'tap' : 'click'} the "{isMobile ? 'Set' : 'Set from Video'}" button next to the input to capture the current video playback time as the end time</li>
+                    <li>To use the {isMobile ? '"Set"' : '"Set from Video"'} button: Play the video to the desired time, then {isMobile ? 'tap' : 'click'} it to capture that time in the start time or end time.</li>
+                    {!isMobile && (
+                      <li>On desktop, the <strong>Loop Time</strong> display shows the length of the current loop (end time minus start time).</li>
+                    )}
                   </ul>
                 </li>
                 <li>
-                  <strong>Set target loops:</strong> Enter how many times you want the video to loop between the start and end times.
+                  <strong>Set target loops:</strong> Enter how many times you want the video to loop between the start and end times (1 to 10,000).
                 </li>
                 <li>
                   <strong>Start looping:</strong> {isMobile ? 'Tap' : 'Click'} the green "Start Loop" button. The video will automatically:
@@ -1615,9 +1619,9 @@ function App() {
                 <li>
                   <strong>Control playback:</strong>
                   <ul>
-                    <li>{isMobile ? 'Tap' : 'Click'} "Stop Loop" (red button) to pause the loop</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} "Stop Loop" (red button) to pause the loop. When paused, the same button becomes "Resume Loop"; {isMobile ? 'tap' : 'click'} it again to resume from the current position.</li>
                     <li>{isMobile ? 'Tap' : 'Click'} "Reset Loop" (blue button) to return to the start time and reset the loop counter</li>
-                    <li>Use the "Playback Speed" buttons to adjust video speed (0.5x to 2x)</li>
+                    <li>Use the "Playback Speed" preset buttons (0.5x to 2x) to adjust video speed. {!isMobile && 'On desktop, a slider also allows any speed from 0.25x to 2x.'}</li>
                   </ul>
                 </li>
                 <li>
