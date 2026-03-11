@@ -2275,7 +2275,7 @@ function App() {
         </div>
         
         {/* Mobile label - shown only on mobile, below buttons */}
-        <label htmlFor="video-id" className="mobile-label">URL or Video ID of song from YouTube</label>
+        <label htmlFor="video-id" className="mobile-label">Search or paste a YouTube link</label>
         <div className="video-id-input-wrapper">
         <input
           id="video-id"
@@ -2284,7 +2284,7 @@ function App() {
           onChange={(e) => handleVideoIdChange(e.target.value)}
           onKeyDown={(e) => handleInputKeyDown(e, setVideoId)}
           onFocus={() => setShowRecentVideos(false)}
-          placeholder="Enter URL or Video ID of song from YouTube"
+          placeholder="Search or paste a YouTube link"
           disabled={!apiReady}
           aria-invalid={!!validationError}
           aria-describedby={validationError ? "video-id-error" : undefined}
@@ -2663,6 +2663,9 @@ function App() {
       )}
 
       <div className="status">
+        <div className="status-context">
+          Loop: {startTimeFormatted} → {endTimeFormatted} • {targetLoops} repeats
+        </div>
         <div className="status-main">
           Loop {currentLoops} / {targetLoops}
           {targetLoops > 0 && (
