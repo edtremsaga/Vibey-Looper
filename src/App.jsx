@@ -8,6 +8,23 @@ import SetList from './SetList.jsx'
 // App default video (fallback)
 const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
 
+const LOADED_MESSAGE_TIMEOUT = 2000
+
+const splitSearchResultTitle = (title) => {
+  const parts = typeof title === 'string' ? title.split(' - ') : []
+  if (parts.length === 2) {
+    return {
+      artist: parts[0],
+      song: parts[1],
+    }
+  }
+
+  return {
+    artist: null,
+    song: title,
+  }
+}
+
 // Helper function to fetch video title from YouTube oEmbed API (free, no API key needed)
 // Security: Validates and sanitizes API responses to prevent XSS and data injection
 const fetchVideoTitle = async (videoId) => {
@@ -106,6 +123,11 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchMessage, setSearchMessage] = useState('')
+  const [searchMessageTone, setSearchMessageTone] = useState('info')
+  const [loadedTitleMessage, setLoadedTitleMessage] = useState('')
   const [hasBeenStopped, setHasBeenStopped] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [volume, setVolume] = useState(DEFAULTS.VOLUME) // Volume control (0-100)
@@ -133,6 +155,7 @@ function App() {
   const lastAutoSetEndTimeVideoIdRef = useRef(null) // Track which video ID we've auto-set endTime for
   const videoDurationVideoIdRef = useRef(null) // Track which videoId the current videoDuration belongs to
   const savedLoopTimesRef = useRef({ startTime: null, endTime: null }) // Store saved loop times from last Start Loop click
+  const loadedTitleTimeoutRef = useRef(null)
 
   // Detect mobile device
   useEffect(() => {
@@ -388,6 +411,14 @@ function App() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showSavedLoops])
+
+  useEffect(() => {
+    return () => {
+      if (loadedTitleTimeoutRef.current) {
+        clearTimeout(loadedTitleTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -1400,20 +1431,70 @@ function App() {
     // User must click "Start Loop" button to begin looping with new settings
   }, [videoId, player])
 
-  const handleYouTubeSearch = useCallback(() => {
-    if (searchQuery.trim()) {
-      const encodedQuery = encodeURIComponent(searchQuery.trim())
-      const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodedQuery}`
-      window.open(youtubeSearchUrl, '_blank')
+  const handleYouTubeSearch = useCallback(async () => {
+    const query = searchQuery.trim()
+    if (!query) return
+
+    setSearchResults([])
+    setSearchMessageTone('info')
+    setSearchMessage('Searching YouTube...')
+    setIsSearching(true)
+
+    try {
+      const response = await fetch(`/api/youtube-search?q=${encodeURIComponent(query)}`)
+
+      if (response.status === 429) {
+        setSearchMessageTone('warning')
+        setSearchMessage('Too many searches right now. Try again in a bit.')
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error('Search failed')
+      }
+
+      const data = await response.json()
+      const items = Array.isArray(data.items) ? data.items : []
+      setSearchResults(items)
+
+      if (items.length === 0) {
+        setSearchMessageTone('info')
+        setSearchMessage('No results found.')
+      } else {
+        setSearchMessage('')
+      }
+    } catch (error) {
+      setSearchMessageTone('error')
+      setSearchMessage('Could not reach YouTube search. Try again in a bit.')
+    } finally {
+      setIsSearching(false)
     }
   }, [searchQuery])
 
   const handleSearchKeyPress = useCallback((e) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      handleYouTubeSearch()
+      void handleYouTubeSearch()
     }
   }, [handleYouTubeSearch])
+
+  const handleSearchResultSelect = useCallback((result) => {
+    const url = `https://www.youtube.com/watch?v=${result.videoId}`
+
+    handleVideoIdChange(url)
+    setSearchResults([])
+    setSearchMessage('')
+    setLoadedTitleMessage(`Loaded: ${result.title}`)
+
+    if (loadedTitleTimeoutRef.current) {
+      clearTimeout(loadedTitleTimeoutRef.current)
+    }
+
+    loadedTitleTimeoutRef.current = setTimeout(() => {
+      setLoadedTitleMessage('')
+      loadedTitleTimeoutRef.current = null
+    }, LOADED_MESSAGE_TIMEOUT)
+  }, [handleVideoIdChange])
 
   const handleVolumeChange = useCallback((e) => {
     const newVolume = parseInt(e.target.value, 10)
@@ -1587,7 +1668,7 @@ function App() {
                   <strong>Find a YouTube video:</strong>
                   <ul>
                     {!isMobile && (
-                      <li>Use the search box at the top to search for songs. Click "Search on YouTube" to open results in a new tab.</li>
+                      <li>Use the search box at the top to search by song title, artist, or both. Press Enter or click Search to see matching videos, then click a result to load it.</li>
                     )}
                     <li>Paste a YouTube URL or enter a Video ID directly in the input field below.</li>
                     <li>Use the star (★) button next to a video to set it as your default; that video will load when you open the app. {isMobile ? 'Tap' : 'Click'} the star again to remove it as default. The default video cannot be removed from Recent until it is no longer set as default.</li>
@@ -1710,10 +1791,14 @@ function App() {
                 id="search-query"
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setSearchResults([])
+                  setSearchMessage('')
+                }}
                 onKeyPress={handleSearchKeyPress}
                 onKeyDown={(e) => handleInputKeyDown(e, setSearchQuery)}
-                placeholder="Type song name or artist..."
+                placeholder="Type song title, artist, or both..."
                 className="search-input"
                 autoComplete="off"
               />
@@ -1730,15 +1815,57 @@ function App() {
               )}
             </div>
             <button
-              type="button"
-              className="btn btn-search"
-              onClick={handleYouTubeSearch}
-              disabled={!searchQuery.trim()}
-            >
-              Search on YouTube
-            </button>
+                  type="button"
+                  className="btn btn-search"
+                  onClick={() => {
+                    void handleYouTubeSearch()
+                  }}
+                  disabled={isSearching || !searchQuery.trim()}
+                >
+                  {isSearching ? 'Searching...' : 'Search'}
+                </button>
           </div>
-          <p className="search-hint">Search will open in a new tab. Copy the video URL and paste it below.</p>
+          {searchMessage && (
+            <p className={`search-status search-status-${searchMessageTone}`}>
+              {searchMessage}
+            </p>
+          )}
+          {loadedTitleMessage && (
+            <p className="search-status search-status-success">
+              {loadedTitleMessage}
+            </p>
+          )}
+          {searchResults.length > 0 && (
+            <div className="search-results" role="list" aria-label="YouTube search results">
+              {searchResults.map((result) => {
+                const { artist, song } = splitSearchResultTitle(result.title)
+                return (
+                  <button
+                    key={result.videoId}
+                    type="button"
+                    className="search-result-item"
+                    onClick={() => handleSearchResultSelect(result)}
+                  >
+                    <img
+                      src={result.thumbnailUrl}
+                      alt={result.title}
+                      className="search-result-thumbnail"
+                      loading="lazy"
+                    />
+                    <div className="search-result-info">
+                      <span className="search-result-title">{song}</span>
+                      <span className="search-result-meta">
+                        {artist ? `${artist} • ` : ''}
+                        {result.channelTitle}
+                        {result.duration ? ` • ${result.duration}` : ''}
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          <p className="search-hint">Search inline by song title or artist, then click a result to load it into the looper.</p>
         </div>
       </div>
 

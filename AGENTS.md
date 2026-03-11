@@ -125,9 +125,25 @@ Install:
 
 npm install
 
-Run dev server:
+Run Vite frontend only:
 
 npm run dev
+
+Note:
+
+- `npm run dev` runs the Vite frontend only.
+- It does NOT expose `/api` routes.
+- Features that depend on Vercel serverless functions, including YouTube search, require running the project with Vercel locally.
+
+Create `.env.local` in the repo root with:
+
+YOUTUBE_API_KEY=your_youtube_data_api_key
+
+Run local development with Vercel:
+
+npx vercel dev
+
+This runs both the Vite app and the `/api` serverless functions locally.
 
 Build:
 
