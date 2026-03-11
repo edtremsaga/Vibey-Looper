@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 
 vi.mock('../SetList.jsx', () => ({
   default: ({ onBack }) => (
@@ -13,6 +13,7 @@ import App, { isTimeValidationError } from '../App.jsx'
 
 // Stub localStorage so App can load without errors
 beforeEach(() => {
+  vi.clearAllMocks()
   const store = {}
   vi.stubGlobal('localStorage', {
     getItem: (key) => store[key] ?? null,
@@ -34,11 +35,44 @@ describe('App', () => {
 
   const getStartTimeInput = () => screen.getByLabelText(/start time/i, { selector: 'input' })
   const getEndTimeInput = () => screen.getByLabelText(/end time/i, { selector: 'input' })
-  const getVideoInput = () => screen.getByLabelText(/url or video id of song from youtube/i, { selector: 'input' })
+  const getVideoInput = () => screen.getByPlaceholderText(/search or paste a youtube link/i)
+  const getMockPlayer = () => globalThis.YT.Player.mock.results[0]?.value
+  const getPlayerOptions = () => globalThis.YT.Player.mock.calls[0]?.[1]
+  const getSavedLoopsToggle = () => {
+    const buttons = screen.getAllByRole('button', { name: /saved loops/i })
+    return buttons[buttons.length - 1]
+  }
+  const openSavedLoopsMenuAndLoadFirst = async () => {
+    fireEvent.click(getSavedLoopsToggle())
+    await waitFor(() => {
+      expect(screen.getAllByRole('menuitem').length).toBeGreaterThan(0)
+    })
+    fireEvent.click(screen.getAllByRole('menuitem')[0])
+  }
+  const setSavedLoops = (loops) => {
+    localStorage.setItem('savedLoops', JSON.stringify(loops))
+  }
 
   const setLoopTimes = (startValue, endValue) => {
     fireEvent.change(getStartTimeInput(), { target: { value: startValue } })
     fireEvent.change(getEndTimeInput(), { target: { value: endValue } })
+  }
+
+  const setupPlayerSpies = async () => {
+    await waitFor(() => {
+      expect(globalThis.YT.Player).toHaveBeenCalled()
+    })
+
+    const mockPlayer = getMockPlayer()
+    mockPlayer.setPlaybackRate = vi.fn()
+    mockPlayer.setVolume = vi.fn()
+    mockPlayer.playVideo = vi.fn()
+    mockPlayer.pauseVideo = vi.fn()
+    mockPlayer.seekTo = vi.fn()
+    mockPlayer.getCurrentTime = vi.fn(() => 0)
+    mockPlayer.getDuration = vi.fn(() => 120)
+
+    return mockPlayer
   }
 
   it('renders without crashing', () => {
@@ -150,33 +184,28 @@ describe('App', () => {
   })
 
   it('does not restore stale times after loading a saved loop for a different video and clicking reset', async () => {
-    localStorage.setItem(
-      'savedLoops',
-      JSON.stringify([
-        {
-          id: 'saved-loop-1',
-          videoId: 'lmnopqrstuv',
-          url: 'https://www.youtube.com/watch?v=lmnopqrstuv',
-          startTime: 20,
-          endTime: 40,
-          targetLoops: 3,
-          playbackSpeed: 1,
-          title: 'Saved Loop',
-          author: 'Test Author',
-          thumbnail: 'https://example.com/thumb.jpg',
-          timestamp: Date.now(),
-        },
-      ])
-    )
+    setSavedLoops([
+      {
+        id: 'saved-loop-1',
+        videoId: 'lmnopqrstuv',
+        url: 'https://www.youtube.com/watch?v=lmnopqrstuv',
+        startTime: 20,
+        endTime: 40,
+        targetLoops: 3,
+        playbackSpeed: 1,
+        title: 'Saved Loop',
+        author: 'Test Author',
+        thumbnail: 'https://example.com/thumb.jpg',
+        timestamp: Date.now(),
+      },
+    ])
 
     await renderApp()
 
     setLoopTimes('0:05', '0:30')
     fireEvent.click(screen.getByRole('button', { name: /start loop/i }))
 
-    const savedLoopsButtons = screen.getAllByRole('button', { name: /saved loops/i })
-    fireEvent.click(savedLoopsButtons[savedLoopsButtons.length - 1])
-    fireEvent.click(screen.getAllByRole('menuitem')[0])
+    await openSavedLoopsMenuAndLoadFirst()
 
     await waitFor(() => {
       expect(getStartTimeInput()).toHaveValue('0:20')
@@ -221,5 +250,263 @@ describe('App', () => {
 
     expect(getStartTimeInput()).toHaveValue('0:00')
     expect(getEndTimeInput()).not.toHaveValue('0:30')
+  })
+
+  it('uses ENDED as a fallback loop completion path when polling has not completed the cycle', async () => {
+    await renderApp()
+    const mockPlayer = await setupPlayerSpies()
+
+    fireEvent.click(screen.getByRole('button', { name: /start loop/i }))
+
+    const onStateChange = getPlayerOptions().events.onStateChange
+
+    act(() => {
+      onStateChange({ data: 0, target: mockPlayer })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 1 \/ 5/i)).toBeInTheDocument()
+    })
+
+    expect(mockPlayer.seekTo).toHaveBeenCalledWith(0, true)
+    expect(mockPlayer.playVideo).toHaveBeenCalled()
+  })
+
+  it('does not double-count when polling and ENDED happen close together', async () => {
+    await renderApp()
+    const mockPlayer = await setupPlayerSpies()
+    mockPlayer.getCurrentTime = vi.fn(() => 10)
+
+    setLoopTimes('0:05', '0:10')
+    fireEvent.click(screen.getByRole('button', { name: /start loop/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 1 \/ 5/i)).toBeInTheDocument()
+    })
+
+    const onStateChange = getPlayerOptions().events.onStateChange
+
+    act(() => {
+      onStateChange({ data: 0, target: mockPlayer })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 1 \/ 5/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByText(/loop 2 \/ 5/i)).not.toBeInTheDocument()
+  })
+
+  it('preserves shortened-loop polling behavior', async () => {
+    await renderApp()
+    const mockPlayer = await setupPlayerSpies()
+    mockPlayer.getCurrentTime = vi.fn(() => 10)
+
+    setLoopTimes('0:05', '0:10')
+    fireEvent.click(screen.getByRole('button', { name: /start loop/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 1 \/ 5/i)).toBeInTheDocument()
+    })
+
+    expect(mockPlayer.seekTo).toHaveBeenLastCalledWith(5, true)
+  })
+
+  it('stops on the final target loop when ENDED fallback completes the last cycle', async () => {
+    await renderApp()
+    const mockPlayer = await setupPlayerSpies()
+
+    fireEvent.change(screen.getByLabelText(/# of loops/i, { selector: 'input' }), {
+      target: { value: '1' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /start loop/i }))
+
+    const onStateChange = getPlayerOptions().events.onStateChange
+
+    act(() => {
+      onStateChange({ data: 0, target: mockPlayer })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 1 \/ 1/i)).toBeInTheDocument()
+    })
+
+    expect(mockPlayer.pauseVideo).toHaveBeenCalled()
+  })
+
+  it('restarts a saved default full-song loop when ENDED fires', async () => {
+    setSavedLoops([
+      {
+        id: 'saved-default-loop',
+        videoId: 'lmnopqrstuv',
+        url: 'https://www.youtube.com/watch?v=lmnopqrstuv',
+        startTime: 0,
+        endTime: 120,
+        targetLoops: 5,
+        playbackSpeed: 1,
+        title: 'Saved Full Song',
+        author: 'Test Author',
+        thumbnail: 'https://example.com/thumb.jpg',
+        timestamp: Date.now(),
+      },
+    ])
+
+    await renderApp()
+    const mockPlayer = await setupPlayerSpies()
+
+    await openSavedLoopsMenuAndLoadFirst()
+
+    await waitFor(() => {
+      expect(getStartTimeInput()).toHaveValue('0:00')
+      expect(getEndTimeInput()).toHaveValue('2:00')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /start loop/i }))
+
+    act(() => {
+      getPlayerOptions().events.onStateChange({ data: 0, target: mockPlayer })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 1 \/ 5/i)).toBeInTheDocument()
+    })
+
+    expect(mockPlayer.seekTo).toHaveBeenCalledWith(0, true)
+    expect(mockPlayer.playVideo).toHaveBeenCalled()
+  })
+
+  it('advances exactly once per ENDED cycle across multiple repeats and stops at target', async () => {
+    await renderApp()
+    const mockPlayer = await setupPlayerSpies()
+
+    fireEvent.change(screen.getByLabelText(/# of loops/i, { selector: 'input' }), {
+      target: { value: '2' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /start loop/i }))
+
+    act(() => {
+      getPlayerOptions().events.onStateChange({ data: 0, target: mockPlayer })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 1 \/ 2/i)).toBeInTheDocument()
+    })
+
+    // Simulate playback resuming from the loop start so the polling path can
+    // clear the cycle guard before the next ENDED event arrives.
+    mockPlayer.getCurrentTime = vi.fn(() => 0)
+    await waitFor(() => {
+      expect(screen.getByText(/current: 0:00/i)).toBeInTheDocument()
+    })
+
+    act(() => {
+      getPlayerOptions().events.onStateChange({ data: 0, target: mockPlayer })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 2 \/ 2/i)).toBeInTheDocument()
+    })
+
+    expect(mockPlayer.pauseVideo).toHaveBeenCalled()
+    expect(screen.queryByText(/loop 3 \/ 2/i)).not.toBeInTheDocument()
+  })
+
+  it('does nothing on ENDED when no loop is active', async () => {
+    await renderApp()
+    const mockPlayer = await setupPlayerSpies()
+
+    act(() => {
+      getPlayerOptions().events.onStateChange({ data: 0, target: mockPlayer })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 0 \/ 5/i)).toBeInTheDocument()
+    })
+
+    expect(mockPlayer.seekTo).not.toHaveBeenCalled()
+    expect(mockPlayer.playVideo).not.toHaveBeenCalled()
+  })
+
+  it('does not restart on ENDED after the loop has been stopped', async () => {
+    await renderApp()
+    const mockPlayer = await setupPlayerSpies()
+
+    fireEvent.click(screen.getByRole('button', { name: /start loop/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^stop loop$/i }))
+
+    act(() => {
+      getPlayerOptions().events.onStateChange({ data: 0, target: mockPlayer })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 0 \/ 5/i)).toBeInTheDocument()
+    })
+
+    expect(mockPlayer.seekTo).toHaveBeenCalledTimes(1)
+    expect(mockPlayer.playVideo).toHaveBeenCalledTimes(1)
+  })
+
+  it('reset still restores the last started loop state after an ENDED fallback cycle', async () => {
+    await renderApp()
+    const mockPlayer = await setupPlayerSpies()
+
+    setLoopTimes('0:05', '0:20')
+    fireEvent.click(screen.getByRole('button', { name: /start loop/i }))
+
+    act(() => {
+      getPlayerOptions().events.onStateChange({ data: 0, target: mockPlayer })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 1 \/ 5/i)).toBeInTheDocument()
+    })
+
+    setLoopTimes('0:10', '0:15')
+    fireEvent.click(screen.getByRole('button', { name: /reset loop/i }))
+
+    expect(getStartTimeInput()).toHaveValue('0:05')
+    expect(getEndTimeInput()).toHaveValue('0:20')
+  })
+
+  it('restarts a saved loop with a non-zero start time from that same start after ENDED', async () => {
+    setSavedLoops([
+      {
+        id: 'saved-nonzero-loop',
+        videoId: 'lmnopqrstuv',
+        url: 'https://www.youtube.com/watch?v=lmnopqrstuv',
+        startTime: 20,
+        endTime: 120,
+        targetLoops: 4,
+        playbackSpeed: 1,
+        title: 'Saved Offset Loop',
+        author: 'Test Author',
+        thumbnail: 'https://example.com/thumb.jpg',
+        timestamp: Date.now(),
+      },
+    ])
+
+    await renderApp()
+    const mockPlayer = await setupPlayerSpies()
+
+    await openSavedLoopsMenuAndLoadFirst()
+
+    await waitFor(() => {
+      expect(getStartTimeInput()).toHaveValue('0:20')
+      expect(getEndTimeInput()).toHaveValue('2:00')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /start loop/i }))
+
+    act(() => {
+      getPlayerOptions().events.onStateChange({ data: 0, target: mockPlayer })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/loop 1 \/ 4/i)).toBeInTheDocument()
+    })
+
+    expect(mockPlayer.seekTo).toHaveBeenLastCalledWith(20, true)
   })
 })

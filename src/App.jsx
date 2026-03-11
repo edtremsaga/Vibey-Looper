@@ -175,10 +175,53 @@ function App() {
   const videoDurationVideoIdRef = useRef(null) // Track which videoId the current videoDuration belongs to
   const savedLoopTimesRef = useRef({ startTime: null, endTime: null }) // Store saved loop times from last Start Loop click
   const loadedTitleTimeoutRef = useRef(null)
+  const completeLoopCycleRef = useRef(null)
 
   const clearSavedLoopTimes = useCallback(() => {
     savedLoopTimesRef.current = { startTime: null, endTime: null }
   }, [])
+
+  completeLoopCycleRef.current = (activePlayer, { resumeAfterSeek = false } = {}) => {
+    if (hasLoopedRef.current) {
+      return false
+    }
+
+    hasLoopedRef.current = true
+
+    setCurrentLoops((prev) => {
+      const newCount = prev + 1
+
+      if (newCount >= targetLoops) {
+        setIsPlaying(false)
+        if (activePlayer?.pauseVideo) {
+          try {
+            activePlayer.pauseVideo()
+          } catch (error) {
+            console.warn('Failed to pause video at loop completion:', error)
+          }
+        }
+        return newCount
+      }
+
+      try {
+        if (activePlayer?.seekTo) {
+          activePlayer.seekTo(startTime, true)
+        }
+        if (activePlayer?.setPlaybackRate) {
+          activePlayer.setPlaybackRate(playbackSpeed)
+        }
+        if (resumeAfterSeek && activePlayer?.playVideo) {
+          activePlayer.playVideo()
+        }
+      } catch (error) {
+        console.warn('Failed to seek or resume during loop completion:', error)
+      }
+
+      return newCount
+    })
+
+    return true
+  }
 
   // Detect mobile device
   useEffect(() => {
@@ -554,6 +597,8 @@ function App() {
             } else if (event.data === 2) {
               // Video is paused
               setIsPlaying(false)
+            } else if (event.data === 0 && isCheckingTimeRef.current && completeLoopCycleRef.current) {
+              completeLoopCycleRef.current(event.target, { resumeAfterSeek: true })
             }
             
             // When video is cued (state 5), it's ready and showing thumbnail
@@ -978,41 +1023,8 @@ function App() {
           
           if (time >= endTime) {
             // Check if we've already looped for this cycle
-            if (!hasLoopedRef.current) {
-              hasLoopedRef.current = true
-              
-              // Increment loop count
-              setCurrentLoops((prev) => {
-                const newCount = prev + 1
-                
-                // Check if we've reached target
-                if (newCount >= targetLoops) {
-                  setIsPlaying(false)
-                  if (player.pauseVideo) {
-                    try {
-                      player.pauseVideo()
-                    } catch (error) {
-                      console.warn('Failed to pause video at loop completion:', error)
-                    }
-                  }
-                  return newCount
-                }
-                
-                // Seek back to start time and maintain playback speed
-                try {
-                  if (player.seekTo) {
-                    player.seekTo(startTime, true)
-                  }
-                  if (player.setPlaybackRate) {
-                    player.setPlaybackRate(playbackSpeed)
-                  }
-                } catch (error) {
-                  console.warn('Failed to seek or set playback speed during loop:', error)
-                  // Continue anyway - the loop will try again next check
-                }
-                
-                return newCount
-              })
+            if (completeLoopCycleRef.current) {
+              completeLoopCycleRef.current(player)
             }
             // Schedule next check with standard interval after loop
             // Only schedule if still checking (cleanup sets isCheckingTimeRef to false)
