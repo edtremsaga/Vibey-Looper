@@ -35,6 +35,14 @@ const splitSearchResultTitle = (title) => {
   }
 }
 
+export const isTimeValidationError = (message) => {
+  return typeof message === 'string' && (
+    message.startsWith('End time must be after start time.') ||
+    message.startsWith('Start time must be before the video ends') ||
+    message.startsWith('End time cannot be after the video ends')
+  )
+}
+
 // Helper function to fetch video title from YouTube oEmbed API (free, no API key needed)
 // Security: Validates and sanitizes API responses to prevent XSS and data injection
 const fetchVideoTitle = async (videoId) => {
@@ -867,9 +875,18 @@ function App() {
   // Validate times
   // Security: Validates time inputs against video duration and prevents invalid ranges
   useEffect(() => {
+    const setTimeValidationError = (message) => {
+      setValidationError((prevError) => {
+        if (prevError && !isTimeValidationError(prevError)) {
+          return prevError
+        }
+        return message
+      })
+    }
+
     // Check basic range validation
     if (endTime <= startTime) {
-      setValidationError('End time must be after start time. Use the "Set from Video" buttons to capture times accurately.')
+      setTimeValidationError('End time must be after start time. Use the "Set from Video" buttons to capture times accurately.')
       return
     }
     
@@ -888,11 +905,11 @@ function App() {
       const startFails = startFloor >= durationMax
       const endFails = endFloor > durationMax
       if (startFails) {
-        setValidationError(`Start time must be before the video ends (${secondsToMMSS(videoDuration)}). Use the "Set from Video" button to capture the exact time.`)
+        setTimeValidationError(`Start time must be before the video ends (${secondsToMMSS(videoDuration)}). Use the "Set from Video" button to capture the exact time.`)
         return
       }
       if (endFails) {
-        setValidationError(`End time cannot be after the video ends (${secondsToMMSS(videoDuration)}). Use the "Set from Video" button to capture the exact time.`)
+        setTimeValidationError(`End time cannot be after the video ends (${secondsToMMSS(videoDuration)}). Use the "Set from Video" button to capture the exact time.`)
         return
       }
     }
@@ -900,10 +917,7 @@ function App() {
     // Clear validation errors if all checks pass
     // Only clear time validation errors, not YouTube errors
     setValidationError((prevError) => {
-      if (prevError && (
-        prevError === 'End time must be greater than start time' ||
-        prevError.includes('video duration')
-      )) {
+      if (isTimeValidationError(prevError)) {
         return ''
       }
       return prevError

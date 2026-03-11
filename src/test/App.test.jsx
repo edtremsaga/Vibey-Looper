@@ -9,7 +9,7 @@ vi.mock('../SetList.jsx', () => ({
   ),
 }))
 
-import App from '../App.jsx'
+import App, { isTimeValidationError } from '../App.jsx'
 
 // Stub localStorage so App can load without errors
 beforeEach(() => {
@@ -103,6 +103,50 @@ describe('App', () => {
 
     expect(getStartTimeInput()).toHaveValue('0:00')
     expect(getEndTimeInput()).toHaveValue('0:30')
+  })
+
+  it('clears the end-before-start validation error after times become valid', async () => {
+    await renderApp()
+
+    setLoopTimes('0:30', '0:05')
+    expect(screen.getAllByText(/end time must be after start time/i).length).toBeGreaterThan(0)
+
+    fireEvent.change(getEndTimeInput(), { target: { value: '0:45' } })
+
+    await waitFor(() => {
+      expect(screen.queryByText(/end time must be after start time/i)).not.toBeInTheDocument()
+    })
+  })
+
+  it('recognizes start-after-duration validation messages as time errors', () => {
+    expect(
+      isTimeValidationError('Start time must be before the video ends (2:00). Use the "Set from Video" button to capture the exact time.')
+    ).toBe(true)
+  })
+
+  it('recognizes end-after-duration validation messages as time errors', () => {
+    expect(
+      isTimeValidationError('End time cannot be after the video ends (2:00). Use the "Set from Video" button to capture the exact time.')
+    ).toBe(true)
+  })
+
+  it('does not clear unrelated validation errors when times change', async () => {
+    await renderApp()
+
+    fireEvent.change(getVideoInput(), { target: { value: '' } })
+    fireEvent.click(screen.getAllByRole('button', { name: /save current loop configuration/i }).slice(-1)[0])
+
+    expect(screen.getAllByText(/invalid video\./i).length).toBeGreaterThan(0)
+
+    setLoopTimes('0:10', '0:20')
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/invalid video\./i).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('does not treat unrelated validation messages as time errors', () => {
+    expect(isTimeValidationError('Invalid video. Please load a valid YouTube video first.')).toBe(false)
   })
 
   it('does not restore stale times after loading a saved loop for a different video and clicking reset', async () => {
