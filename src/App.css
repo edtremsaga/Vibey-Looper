@@ -244,6 +244,95 @@
   font-family: 'Roboto Condensed', sans-serif;
 }
 
+.help-panel {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  font-family: 'Roboto Condensed', sans-serif;
+}
+
+.help-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.help-panel-intro {
+  min-width: 0;
+  flex: 1;
+}
+
+.help-panel-title {
+  margin: 0 0 8px;
+  color: #fff;
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.help-panel-summary {
+  margin: 0;
+  padding-left: 18px;
+  color: #ccc;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.help-panel-toggle {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: 2px solid #666;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s, background-color 0.2s;
+}
+
+.help-panel-toggle:hover {
+  border-color: #ff0000;
+  color: #ff0000;
+}
+
+.help-panel-toggle:focus-visible {
+  outline: 3px solid #32ff32;
+  outline-offset: 2px;
+}
+
+.help-panel-details {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ccc;
+}
+
+.help-panel-details h4 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-family: 'Oswald', sans-serif;
+  font-size: 15px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.help-panel-details p {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.help-panel-details p:last-child {
+  margin-bottom: 0;
+}
+
 .search-status {
   margin-top: 8px;
   margin-bottom: 0;
@@ -342,6 +431,30 @@
     color: #aaa;
     margin-top: 8px;
     line-height: 1.4;
+  }
+
+  .help-panel {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .help-panel-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .help-panel-title {
+    font-size: 17px;
+  }
+
+  .help-panel-summary,
+  .help-panel-details p {
+    font-size: 13px;
+  }
+
+  .help-panel-toggle {
+    align-self: flex-start;
   }
 
   .search-result-item {

@@ -4,6 +4,7 @@ import { secondsToMMSS, mmssToSeconds, normalizeMMSS, extractVideoId, getYouTube
 import { saveRecentVideo, loadRecentVideos, deleteRecentVideo, saveDefaultVideo, loadDefaultVideo, clearDefaultVideo, saveSavedLoop, loadSavedLoops, deleteSavedLoop } from './utils/storage.js'
 import { BREAKPOINTS, TIME_LIMITS, LOOP_LIMITS, STRING_LIMITS, YOUTUBE, DEFAULTS, VOLUME, PLAYBACK_SPEED } from './utils/constants.js'
 import SetList from './SetList.jsx'
+import HelpPanel from './HelpPanel.jsx'
 
 // App default video (fallback)
 const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
@@ -1898,7 +1899,7 @@ function App() {
               })}
             </div>
           )}
-          <p className="search-hint">Search inline by song title or artist, then click a result to load it into the looper.</p>
+          <HelpPanel />
         </div>
       </div>
 
