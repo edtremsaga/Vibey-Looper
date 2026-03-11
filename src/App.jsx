@@ -10,6 +10,16 @@ const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7
 
 const LOADED_MESSAGE_TIMEOUT = 2000
 
+const decodeHtmlEntities = (text) => {
+  if (typeof document === 'undefined' || typeof text !== 'string') {
+    return text
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.innerHTML = text
+  return textarea.value
+}
+
 const splitSearchResultTitle = (title) => {
   const parts = typeof title === 'string' ? title.split(' - ') : []
   if (parts.length === 2) {
@@ -157,6 +167,10 @@ function App() {
   const savedLoopTimesRef = useRef({ startTime: null, endTime: null }) // Store saved loop times from last Start Loop click
   const loadedTitleTimeoutRef = useRef(null)
 
+  const clearSavedLoopTimes = useCallback(() => {
+    savedLoopTimesRef.current = { startTime: null, endTime: null }
+  }, [])
+
   // Detect mobile device
   useEffect(() => {
     const checkMobile = () => {
@@ -281,6 +295,7 @@ function App() {
       preserveEndTimeRef.current = false
       loadingFromRecentVideoRef.current = false
       lastAutoSetEndTimeVideoIdRef.current = null
+      clearSavedLoopTimes()
       
       // Reset video info - will be fetched when player initializes with default video
       const defaultVideoId = extractVideoId(initialVideoId)
@@ -307,7 +322,7 @@ function App() {
     
     // Update the previous state ref
     previousShowSetListPageRef.current = showSetListPage
-  }, [showSetListPage])
+  }, [showSetListPage, clearSavedLoopTimes])
 
   // Fetch default video info on mount and save to recent videos
   useEffect(() => {
@@ -1171,6 +1186,7 @@ function App() {
   const handleVideoIdChange = useCallback((newVideoId) => {
     // Clear preserveEndTimeRef - user is loading a new video (not from saved loop)
     preserveEndTimeRef.current = false
+    clearSavedLoopTimes()
     
     setVideoId(newVideoId)
     setValidationError('')
@@ -1184,13 +1200,14 @@ function App() {
     lastAutoSetEndTimeVideoIdRef.current = null
     
     // Video loading will be handled by the useEffect watching videoId
-  }, [])
+  }, [clearSavedLoopTimes])
 
   const handleRecentVideoSelect = useCallback((recentVideo) => {
     const url = `https://www.youtube.com/watch?v=${recentVideo.videoId}`
     
     // Track that we're loading from recent video (for cueVideoById)
     loadingFromRecentVideoRef.current = true
+    clearSavedLoopTimes()
     
     setVideoId(url)
     setVideoTitle(recentVideo.title || '')
@@ -1215,7 +1232,7 @@ function App() {
     lastAutoSetEndTimeVideoIdRef.current = null
     
     // Note: Don't pause here - let cueVideoById handle it (shows thumbnail without auto-play)
-  }, [])
+  }, [clearSavedLoopTimes])
 
   // Handler to delete a recent video
   const handleDeleteRecentVideo = useCallback((videoId, videoTitle) => {
@@ -1364,6 +1381,7 @@ function App() {
     // This must be set synchronously before any async operations
     isLoadingSavedLoopRef.current = true
     preserveEndTimeRef.current = true // Set preserve flag - will be cleared on user action
+    clearSavedLoopTimes()
     
     // Reset button states to default
     setIsPlaying(false)
@@ -1429,7 +1447,7 @@ function App() {
     
     // Note: Video loads but doesn't auto-play
     // User must click "Start Loop" button to begin looping with new settings
-  }, [videoId, player])
+  }, [videoId, player, clearSavedLoopTimes])
 
   const handleYouTubeSearch = useCallback(async () => {
     const query = searchQuery.trim()
@@ -1733,13 +1751,13 @@ function App() {
                 <li>
                   <strong>Set List:</strong>
                   <ul>
-                    <li>Create a playlist of multiple songs to play in sequence</li>
+                    <li>Create a playlist of multiple saved-loop songs to play in sequence</li>
                     <li>{isMobile ? 'Tap' : 'Click'} the "set list" link below the loop counter to open the Set List page</li>
                     <li>Drag songs from your "Saved Loops" column to the "Set List" column to add them to your playlist</li>
                     <li>Drag songs within the Set List column to reorder them</li>
                     <li>Each song in the set list is numbered (1, 2, 3...) showing the play order</li>
                     <li>{isMobile ? 'Tap' : 'Click'} the "X" button on any song to remove it from the set list</li>
-                    <li>{isMobile ? 'Tap' : 'Click'} "Play Set List" to play all songs in order with a 5-second pause between songs</li>
+                    <li>{isMobile ? 'Tap' : 'Click'} "Play Set List" to play the full videos in order with a 5-second pause between songs</li>
                     <li>During playback, you'll see a countdown showing when the next song will start</li>
                     <li>After the last song, you'll see a "Set list complete" message</li>
                     <li><strong>Save Set List:</strong> {isMobile ? 'Tap' : 'Click'} "Save Set List" to save your current set list with a custom name (max 50 characters)</li>
@@ -1838,7 +1856,8 @@ function App() {
           {searchResults.length > 0 && (
             <div className="search-results" role="list" aria-label="YouTube search results">
               {searchResults.map((result) => {
-                const { artist, song } = splitSearchResultTitle(result.title)
+                const decodedTitle = decodeHtmlEntities(result.title)
+                const { artist, song } = splitSearchResultTitle(decodedTitle)
                 return (
                   <button
                     key={result.videoId}
@@ -1848,7 +1867,7 @@ function App() {
                   >
                     <img
                       src={result.thumbnailUrl}
-                      alt={result.title}
+                      alt={decodedTitle}
                       className="search-result-thumbnail"
                       loading="lazy"
                     />
