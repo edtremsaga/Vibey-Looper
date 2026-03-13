@@ -20,12 +20,16 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   
   // Save Set List feature state
   const [showSaveModal, setShowSaveModal] = useState(false)
+  const [saveAction, setSaveAction] = useState('save')
   const [setListName, setSetListName] = useState('')
   const [saveModalError, setSaveModalError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [savedSetLists, setSavedSetLists] = useState([])
   const [showSavedSetListsDropdown, setShowSavedSetListsDropdown] = useState(false)
+  const [showSaveDropdown, setShowSaveDropdown] = useState(false)
   const [loadedSetListId, setLoadedSetListId] = useState(null)
+  const [loadedSetListName, setLoadedSetListName] = useState('')
+  const [isDirty, setIsDirty] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   const [playbackDelayDisplay, setPlaybackDelayDisplay] = useState('5')
   
@@ -37,6 +41,8 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   const playSongAtIndexRef = useRef(null)
   const savedSetListsDropdownRef = useRef(null)
   const savedSetListsButtonRef = useRef(null)
+  const saveDropdownRef = useRef(null)
+  const saveDropdownButtonRef = useRef(null)
   const setListContainerRef = useRef(null)
   const setListLengthRef = useRef(setList.length) // Track current setList length
 
@@ -47,6 +53,9 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
     
     const loadedSetList = loadSetList()
     setSetList(loadedSetList)
+    setLoadedSetListId(null)
+    setLoadedSetListName('')
+    setIsDirty(false)
   }, [savedLoopsProp])
 
   // Save set list to localStorage whenever it changes
@@ -70,20 +79,31 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
 
   // Close saved set lists dropdown when clicking outside
   useEffect(() => {
-    if (!showSavedSetListsDropdown) return
+    if (!showSavedSetListsDropdown && !showSaveDropdown) return
 
     const handleClickOutside = (event) => {
-      if (savedSetListsDropdownRef.current && 
-          savedSetListsButtonRef.current &&
-          !savedSetListsDropdownRef.current.contains(event.target) &&
-          !savedSetListsButtonRef.current.contains(event.target)) {
+      const clickedOutsideSavedSetLists = savedSetListsDropdownRef.current &&
+        savedSetListsButtonRef.current &&
+        !savedSetListsDropdownRef.current.contains(event.target) &&
+        !savedSetListsButtonRef.current.contains(event.target)
+
+      const clickedOutsideSaveDropdown = saveDropdownRef.current &&
+        saveDropdownButtonRef.current &&
+        !saveDropdownRef.current.contains(event.target) &&
+        !saveDropdownButtonRef.current.contains(event.target)
+
+      if (showSavedSetListsDropdown && clickedOutsideSavedSetLists) {
         setShowSavedSetListsDropdown(false)
+      }
+
+      if (showSaveDropdown && clickedOutsideSaveDropdown) {
+        setShowSaveDropdown(false)
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showSavedSetListsDropdown])
+  }, [showSavedSetListsDropdown, showSaveDropdown])
 
   // Handle ESC key to close modals/dropdowns and help reset drag state
   useEffect(() => {
@@ -91,6 +111,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       if (event.key === 'Escape') {
         // Close any open dropdowns/modals
         setShowSavedSetListsDropdown(false)
+        setShowSaveDropdown(false)
         setShowSaveModal(false)
         setDeleteConfirmId(null)
         
@@ -320,6 +341,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       const newSetList = [...setList]
       newSetList.splice(destination.index, 0, draggedItem)
       setSetList(newSetList)
+      setIsDirty(true)
       setErrorMessage('')
     }
     // If dragging within set list (reordering)
@@ -328,6 +350,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       const [removed] = newSetList.splice(source.index, 1)
       newSetList.splice(destination.index, 0, removed)
       setSetList(newSetList)
+      setIsDirty(true)
       setErrorMessage('')
     }
   }
@@ -349,6 +372,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
     
     // Add to end of set list
     setSetList([...setList, loopToAdd])
+    setIsDirty(true)
     setErrorMessage('')
   }
 
@@ -356,6 +380,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   const handleRemoveFromSetList = (index) => {
     const newSetList = setList.filter((_, i) => i !== index)
     setSetList(newSetList)
+    setIsDirty(true)
     
     // If we're playing and this is the current or a future song, stop playback
     if (currentSongIndex !== null) {
@@ -419,11 +444,12 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
   }
 
   // Save Set List handlers
-  const handleOpenSaveModal = () => {
+  const openSaveNameModal = (nextAction) => {
     if (setList.length === 0) {
       setErrorMessage('Set list is empty. Add songs to the set list before saving.')
       return
     }
+    setSaveAction(nextAction)
     setSetListName('')
     setSaveModalError('')
     setShowSaveModal(true)
@@ -431,8 +457,38 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
 
   const handleCloseSaveModal = () => {
     setShowSaveModal(false)
+    setSaveAction('save')
     setSetListName('')
     setSaveModalError('')
+  }
+
+  const handleSaveCurrentSetList = () => {
+    if (setList.length === 0) {
+      setErrorMessage('Set list is empty. Add songs to the set list before saving.')
+      return
+    }
+
+    if (!loadedSetListId || !loadedSetListName) {
+      openSaveNameModal('save')
+      return
+    }
+
+    const saved = updateSavedSetList(loadedSetListId, loadedSetListName, setList)
+
+    if (saved) {
+      const updated = loadSavedSetLists()
+      setSavedSetLists(updated)
+      setLoadedSetListId(saved.id)
+      setLoadedSetListName(saved.name)
+      setIsDirty(false)
+      setShowSaveDropdown(false)
+      setSuccessMessage(`Set list '${saved.name}' saved successfully`)
+      setTimeout(() => {
+        setSuccessMessage('')
+      }, 3000)
+    } else {
+      setErrorMessage('Failed to save set list. Please try again.')
+    }
   }
 
   const handleSaveSetList = () => {
@@ -450,10 +506,17 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
 
 
     // Check for duplicate name (unless it's the currently loaded set list)
-    const existing = savedSetLists.find(list => 
-      list.name.toLowerCase() === trimmedName.toLowerCase() && 
-      list.id !== loadedSetListId
-    )
+    const existing = savedSetLists.find((list) => {
+      if (list.name.toLowerCase() !== trimmedName.toLowerCase()) {
+        return false
+      }
+
+      if (saveAction === 'save' && loadedSetListId) {
+        return list.id !== loadedSetListId
+      }
+
+      return true
+    })
     
     
     if (existing) {
@@ -461,41 +524,19 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       return
     }
 
-    // Save or update
-    // Only update if: loadedSetListId is set AND the name matches the loaded set list's name
-    // Otherwise, create a new set list
-    let saved
-    if (loadedSetListId) {
-      const loadedSetList = savedSetLists.find(list => list.id === loadedSetListId)
-      if (loadedSetList && loadedSetList.name.toLowerCase() === trimmedName.toLowerCase()) {
-        // Same name as loaded set list - update it
-        saved = updateSavedSetList(loadedSetListId, trimmedName, setList)
-      } else {
-        // Different name - create new set list
-        saved = saveSavedSetList(trimmedName, setList)
-        // Clear loadedSetListId since we're creating a new one
-        setLoadedSetListId(null)
-      }
-    } else {
-      // Create new
-      saved = saveSavedSetList(trimmedName, setList)
-    }
+    const saved = saveSavedSetList(trimmedName, setList)
 
     if (saved) {
       // Reload saved set lists
       const updated = loadSavedSetLists()
       setSavedSetLists(updated)
-      
-      // Only track loadedSetListId if we updated an existing set list (same name)
-      // If we created a new one, don't track it (allow user to create more new ones)
-      if (loadedSetListId && updated.find(list => list.id === loadedSetListId && list.name.toLowerCase() === trimmedName.toLowerCase())) {
-        // loadedSetListId already set, keep it
-      } else {
-        setLoadedSetListId(null)
-      }
+      setLoadedSetListId(saved.id)
+      setLoadedSetListName(saved.name)
+      setIsDirty(false)
       
       // Close modal and show success
       handleCloseSaveModal()
+      setShowSaveDropdown(false)
       setSuccessMessage(`Set list '${trimmedName}' saved successfully`)
       setTimeout(() => {
         setSuccessMessage('')
@@ -509,13 +550,36 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
     if (isPlaying) {
       return // Don't allow during playback
     }
+    setShowSaveDropdown(false)
     setShowSavedSetListsDropdown(!showSavedSetListsDropdown)
+  }
+
+  const handleToggleSaveDropdown = () => {
+    if (isPlaying || setList.length === 0) {
+      return
+    }
+    setShowSavedSetListsDropdown(false)
+    setShowSaveDropdown((prev) => !prev)
+  }
+
+  const handleSaveMenuAction = (action) => {
+    setShowSaveDropdown(false)
+
+    if (action === 'save') {
+      handleSaveCurrentSetList()
+      return
+    }
+
+    openSaveNameModal('save-as-new')
   }
 
   const handleLoadSavedSetList = (savedSetList) => {
     setSetList(savedSetList.songs)
     setLoadedSetListId(savedSetList.id)
+    setLoadedSetListName(savedSetList.name)
+    setIsDirty(false)
     setShowSavedSetListsDropdown(false)
+    setShowSaveDropdown(false)
     setErrorMessage('')
   }
 
@@ -532,6 +596,8 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
       // If deleted set list was currently loaded, clear the loaded ID but keep the set list
       if (deleteConfirmId === loadedSetListId) {
         setLoadedSetListId(null)
+        setLoadedSetListName('')
+        setIsDirty(false)
       }
       
       setDeleteConfirmId(null)
@@ -613,6 +679,13 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
         </div>
       )}
 
+      {loadedSetListId && loadedSetListName && (
+        <div className="set-list-loaded-status">
+          Loaded: {loadedSetListName}
+          {isDirty && ' • Unsaved changes'}
+        </div>
+      )}
+
       {/* Play Set list, Save Set list, and Saved Set Lists buttons */}
       <div className="set-list-play-button-container">
         <button
@@ -622,13 +695,35 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
         >
           {isPlaying ? 'Stop Set List' : 'Play Set List'}
         </button>
-        <button
-          className="btn btn-start set-list-play-button"
-          onClick={handleOpenSaveModal}
-          disabled={setList.length === 0}
-        >
-          Save Set List
-        </button>
+        <div className="set-list-save-dropdown-wrapper">
+          <button
+            ref={saveDropdownButtonRef}
+            className="btn btn-start set-list-play-button"
+            onClick={handleToggleSaveDropdown}
+            disabled={setList.length === 0 || isPlaying}
+            style={{ opacity: isPlaying ? 0.5 : 1, cursor: isPlaying ? 'not-allowed' : 'pointer' }}
+          >
+            Save Set List
+          </button>
+          {showSaveDropdown && (
+            <div ref={saveDropdownRef} className="saved-set-lists-dropdown set-list-save-dropdown">
+              <button
+                type="button"
+                className="saved-set-list-item set-list-save-dropdown-item"
+                onClick={() => handleSaveMenuAction('save')}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                className="saved-set-list-item set-list-save-dropdown-item"
+                onClick={() => handleSaveMenuAction('save-as-new')}
+              >
+                Save As New Set List
+              </button>
+            </div>
+          )}
+        </div>
         <div style={{ position: 'relative' }}>
           <button
             ref={savedSetListsButtonRef}
@@ -921,7 +1016,7 @@ function SetList({ onBack, savedLoops: savedLoopsProp, isMobile = false }) {
                   onClick={handleSaveSetList}
                   style={{ padding: '8px 16px' }}
                 >
-                  Save
+                  {saveAction === 'save-as-new' ? 'Save As New Set List' : 'Save'}
                 </button>
               </div>
             </div>

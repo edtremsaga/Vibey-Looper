@@ -2873,6 +2873,32 @@ input[type="range"]:focus-visible {
   min-width: 180px;
 }
 
+.set-list-loaded-status {
+  color: #ccc;
+  text-align: center;
+  font-size: 14px;
+  margin-bottom: 10px;
+  font-family: 'Roboto Condensed', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.set-list-save-dropdown-wrapper {
+  position: relative;
+}
+
+.set-list-save-dropdown {
+  min-width: 220px;
+}
+
+.set-list-save-dropdown-item {
+  width: 100%;
+  background: #000;
+  text-align: left;
+  cursor: pointer;
+  border: none;
+  font: inherit;
+}
+
 .set-list-countdown {
   color: #22cc22;
   text-align: center;
@@ -3007,6 +3033,12 @@ input[type="range"]:focus-visible {
     font-size: 14px;
     flex-shrink: 0;
     margin-left: 2px;
+  }
+
+  .set-list-save-dropdown {
+    min-width: 100%;
+    right: auto;
+    left: 0;
   }
 }
 
