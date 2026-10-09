@@ -89,7 +89,7 @@ describe('App', () => {
     })
   })
 
-  it('help modal contains updated help content (default video, Resume Loop, target loops range, Set/Set from Video)', () => {
+  it('help modal contains updated help content (default video, MP3 loops, Resume Loop, target loops range, Set/Set from Video)', () => {
     render(<App />)
     const helpButton = screen.getByRole('button', { name: /help/i })
     fireEvent.click(helpButton)
@@ -98,6 +98,9 @@ describe('App', () => {
     expect(helpContent).toBeInTheDocument()
 
     const text = helpContent?.textContent ?? ''
+
+    expect(text).toMatch(/Practice with a local MP3/)
+    expect(text).toMatch(/MP3 loops are currently separate from YouTube saved loops/)
 
     // Default video (star) - added in update
     expect(text).toMatch(/star.*default|default.*star/i)

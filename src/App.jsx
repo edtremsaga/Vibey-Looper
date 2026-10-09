@@ -5,6 +5,7 @@ import { saveRecentVideo, loadRecentVideos, deleteRecentVideo, saveDefaultVideo,
 import { BREAKPOINTS, TIME_LIMITS, LOOP_LIMITS, STRING_LIMITS, YOUTUBE, DEFAULTS, VOLUME, PLAYBACK_SPEED } from './utils/constants.js'
 import SetList from './SetList.jsx'
 import HelpPanel from './HelpPanel.jsx'
+import LocalMp3Panel from './LocalMp3Panel.jsx'
 
 // App default video (fallback)
 const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
@@ -160,6 +161,9 @@ function App() {
   const [showSavedLoops, setShowSavedLoops] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null) // { type: 'recent' | 'saved', id: string, title: string }
   const [showSetListPage, setShowSetListPage] = useState(false)
+  const [localSelection, setLocalSelection] = useState(null)
+  const localAudioActiveRef = useRef(false)
+  localAudioActiveRef.current = !!localSelection
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -533,6 +537,7 @@ function App() {
           events: {
           onReady: async (event) => {
             setPlayer(event.target)
+            if (localAudioActiveRef.current) event.target.pauseVideo?.()
             setIsLoading(false)
             // Set initial playback speed and volume
             if (event.target.setPlaybackRate) {
@@ -589,6 +594,11 @@ function App() {
             }
           },
           onStateChange: (event) => {
+            // A late YouTube callback must not restart the hidden player.
+            if (localAudioActiveRef.current) {
+              if (event.data === 1) event.target.pauseVideo?.()
+              return
+            }
             // Sync isPlaying state with actual player state
             // State: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
             if (event.data === 1) {
@@ -1211,6 +1221,7 @@ function App() {
   }, [player, startTime])
 
   const handleVideoIdChange = useCallback((newVideoId) => {
+    setLocalSelection(null)
     // Clear preserveEndTimeRef - user is loading a new video (not from saved loop)
     preserveEndTimeRef.current = false
     clearSavedLoopTimes()
@@ -1230,6 +1241,7 @@ function App() {
   }, [clearSavedLoopTimes])
 
   const handleRecentVideoSelect = useCallback((recentVideo) => {
+    setLocalSelection(null)
     const url = `https://www.youtube.com/watch?v=${recentVideo.videoId}`
     
     // Track that we're loading from recent video (for cueVideoById)
@@ -1404,6 +1416,7 @@ function App() {
   // Handler to load a saved loop
   // Works exactly like handleRecentVideoSelect - just changes videoId and lets normal flow handle it
   const handleLoadSavedLoop = useCallback((savedLoop) => {
+    setLocalSelection(null)
     // Set flags FIRST, before any state changes, to prevent auto-set from running
     // This must be set synchronously before any async operations
     isLoadingSavedLoopRef.current = true
@@ -1594,6 +1607,7 @@ function App() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e) => {
+      if (localAudioActiveRef.current || document.querySelector('.local-mp3-dialog[open]')) return
       // Don't trigger if user is typing in an input
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         return
@@ -1717,6 +1731,15 @@ function App() {
                     )}
                     <li>Paste a YouTube URL or enter a Video ID directly in the input field below.</li>
                     <li>Use the star (★) button next to a video to set it as your default; that video will load when you open the app. {isMobile ? 'Tap' : 'Click'} the star again to remove it as default. The default video cannot be removed from Recent until it is no longer set as default.</li>
+                  </ul>
+                </li>
+                <li>
+                  <strong>Practice with a local MP3:</strong>
+                  <ul>
+                    <li>{isMobile ? 'Tap' : 'Click'} "Local MP3s" to import MP3 files from your computer, then choose a recording to load it into the looper.</li>
+                    <li>Local recordings use the same start time, end time, repeat count, playback speed, Stop/Resume, and Reset Loop controls.</li>
+                    <li>MP3 files remain in this browser and are not uploaded or synced. "Save MP3 Loop" saves reusable MP3 loop settings locally.</li>
+                    <li>MP3 loops are currently separate from YouTube saved loops and cannot be added to Set List.</li>
                   </ul>
                 </li>
                 <li>
@@ -1915,6 +1938,21 @@ function App() {
         </div>
       </div>
 
+      <LocalMp3Panel selection={localSelection} isMobile={isMobile}
+        onSelect={selection => {
+          localAudioActiveRef.current = true
+          isCheckingTimeRef.current = false
+          if (checkIntervalRef.current) clearTimeout(checkIntervalRef.current)
+          player?.pauseVideo?.()
+          setIsPlaying(false)
+          setHasBeenStopped(false)
+          setCurrentLoops(0)
+          clearSavedLoopTimes()
+          setLocalSelection(selection)
+        }}
+        onClose={() => setLocalSelection(null)} />
+
+      <div className="youtube-workspace" hidden={!!localSelection}>
       <div className="input-group">
         {/* Mobile buttons row - shown only on mobile */}
         <div className="mobile-buttons-row">
@@ -2692,8 +2730,9 @@ function App() {
       </div>
 
       {/* Set List control button */}
+      </div>
       <div className="set-list-link-bottom">
-        <button className="help-link-text" onClick={() => setShowSetListPage(true)}>
+        <button className="help-link-text" onClick={() => { setLocalSelection(null); setShowSetListPage(true) }}>
           set list
         </button>
       </div>

@@ -1,0 +1,29 @@
+.local-mp3-section { margin: 24px 0; }
+.local-mp3-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.local-mp3-hint { color: #aaa; font-size: 0.85rem; line-height: 1.5; }
+.local-mp3-dialog { box-sizing: border-box; width: min(680px, calc(100% - 24px)); max-height: 85vh; overflow: auto; color: #eee; background: #111; border: 2px solid #888; border-radius: 8px; padding: 24px; margin: auto; }
+.local-mp3-dialog button, .local-time-controls button { color: #eee; background: #080808; border: 2px solid #888; padding: 10px 14px; cursor: pointer; font: inherit; }
+.local-mp3-dialog button:hover, .local-time-controls button:hover { border-color: #fff; }
+.local-mp3-dialog h3 { margin-top: 20px; }
+.local-mp3-dialog button:focus-visible, .local-time-controls button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.local-mp3-dialog::backdrop { background: #000b; }
+.local-mp3-dialog p { line-height: 1.5; }
+.local-mp3-dialog h2, .local-audio-looper h2 { overflow-wrap: anywhere; }
+.local-mp3-list { list-style: none; margin: 12px 0; padding: 0; }
+.local-mp3-list button { width: 100%; text-align: left; margin: 4px 0; padding: 12px; overflow-wrap: anywhere; }
+.local-mp3-list span { display: block; color: #aaa; font-size: 0.85rem; margin-top: 6px; }
+.local-mp3-import input { display: block; max-width: 100%; margin: 12px 0; }
+.local-audio-looper audio { width: 100%; margin: 12px 0; }
+.local-audio-looper .buttons-row { flex-wrap: wrap; gap: 12px; }
+.local-time-controls { display: grid; grid-template-columns: 1fr 1fr 0.7fr; gap: 12px; }
+.local-time-controls label { font-size: 0.8rem; font-weight: bold; letter-spacing: 1px; }
+.local-time-controls input { box-sizing: border-box; width: 100%; margin: 8px 0; color: #fff; background: #080808; border: 2px solid #ccc; padding: 12px; font: inherit; font-size: 1rem; }
+.local-time-controls button { width: 100%; }
+.local-audio-looper > label { display: block; margin: 20px 0; }
+.local-audio-looper > label input { display: block; width: 100%; margin-top: 12px; }
+.youtube-workspace[hidden] { display: none; }
+@media (max-width: 600px) {
+  .local-time-controls { grid-template-columns: 1fr; }
+  .local-mp3-dialog { padding: 16px; }
+  .local-time-controls input { font-size: 16px; }
+}
