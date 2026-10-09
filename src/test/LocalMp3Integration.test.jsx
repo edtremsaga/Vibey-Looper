@@ -3,14 +3,24 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import App from '../App.jsx'
 
 vi.mock('../LocalMp3Panel.jsx', () => ({
-  default: ({ selection, onSelect, onClose }) => <>
+  LocalMp3Library: ({ onSelect }) => (
     <button onClick={() => onSelect({ recording: { id: 'audio:test' }, key: 'test' })}>Choose test MP3</button>
-    {selection && <><p>MP3 active</p><button onClick={onClose}>Return to YouTube</button></>}
+  ),
+  LocalMp3Player: ({ selection, onClose }) => selection && <>
+    <p>MP3 active</p><button onClick={onClose}>Return to YouTube</button>
   </>,
 }))
 vi.mock('../SetList.jsx', () => ({ default: ({ onBack }) => <button onClick={onBack}>Back to looper</button> }))
 
-beforeEach(() => { localStorage.clear(); vi.clearAllMocks() })
+const setViewportWidth = (width) => {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: width })
+}
+
+beforeEach(() => {
+  setViewportWidth(1280)
+  localStorage.clear()
+  vi.clearAllMocks()
+})
 async function ready() {
   const view = render(<App />)
   await waitFor(() => expect(screen.getByRole('button', { name: 'Reset Loop' })).toBeEnabled())
@@ -51,5 +61,11 @@ describe('MP3/YouTube isolation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'set list' }))
     fireEvent.click(screen.getByText('Back to looper'))
     expect(screen.queryByText('MP3 active')).not.toBeInTheDocument()
+  })
+
+  it('does not render the local MP3 control in the mobile layout', async () => {
+    setViewportWidth(375)
+    render(<App />)
+    await waitFor(() => expect(screen.queryByText('Choose test MP3')).not.toBeInTheDocument())
   })
 })

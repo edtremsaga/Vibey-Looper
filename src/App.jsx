@@ -5,7 +5,7 @@ import { saveRecentVideo, loadRecentVideos, deleteRecentVideo, saveDefaultVideo,
 import { BREAKPOINTS, TIME_LIMITS, LOOP_LIMITS, STRING_LIMITS, YOUTUBE, DEFAULTS, VOLUME, PLAYBACK_SPEED } from './utils/constants.js'
 import SetList from './SetList.jsx'
 import HelpPanel from './HelpPanel.jsx'
-import LocalMp3Panel from './LocalMp3Panel.jsx'
+import { LocalMp3Library, LocalMp3Player } from './LocalMp3Panel.jsx'
 
 // App default video (fallback)
 const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
@@ -163,7 +163,7 @@ function App() {
   const [showSetListPage, setShowSetListPage] = useState(false)
   const [localSelection, setLocalSelection] = useState(null)
   const localAudioActiveRef = useRef(false)
-  localAudioActiveRef.current = !!localSelection
+  localAudioActiveRef.current = !!localSelection && !isMobile
   
   const playerRef = useRef(null)
   const checkIntervalRef = useRef(null)
@@ -255,6 +255,14 @@ function App() {
     
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Local MP3 playback is deliberately desktop-only. Clear a selected recording
+  // if a desktop window enters the mobile layout.
+  useEffect(() => {
+    if (isMobile && localSelection) {
+      setLocalSelection(null)
+    }
+  }, [isMobile, localSelection])
 
   // Helper to detect if device is iPhone (not iPad or MacBook)
   const isIPhone = useMemo(() => {
@@ -1734,9 +1742,9 @@ function App() {
                   </ul>
                 </li>
                 <li>
-                  <strong>Practice with a local MP3:</strong>
+                  <strong>Practice with a local MP3 (desktop only):</strong>
                   <ul>
-                    <li>{isMobile ? 'Tap' : 'Click'} "Local MP3s" to import MP3 files from your computer, then choose a recording to load it into the looper.</li>
+                    <li>Click "Local MP3s" to import MP3 files from your computer, then choose a recording to load it into the looper.</li>
                     <li>Local recordings use the same start time, end time, repeat count, playback speed, Stop/Resume, and Reset Loop controls.</li>
                     <li>MP3 files remain in this browser and are not uploaded or synced. "Save MP3 Loop" saves reusable MP3 loop settings locally.</li>
                     <li>MP3 loops are currently separate from YouTube saved loops and cannot be added to Set List.</li>
@@ -1830,7 +1838,7 @@ function App() {
               {isMobile && (
                 <div className="help-mobile-note">
                   <p style={{ fontStyle: 'italic', fontSize: '13px', color: '#aaa', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    <strong>Note:</strong> YouTube search, volume control, playback speed slider, loop duration display, and keyboard shortcuts are only included in the Desktop version of this app. The Mobile version does not include these items. However, Save Loop, Saved Loops, Recent Videos, and Set List functionality is fully available on mobile with optimized touch targets and bottom sheet interfaces.
+                    <strong>Note:</strong> YouTube search, Local MP3s, volume control, playback speed slider, loop duration display, and keyboard shortcuts are only included in the Desktop version of this app. The Mobile version does not include these items. However, Save Loop, Saved Loops, Recent Videos, and Set List functionality is fully available on mobile with optimized touch targets and bottom sheet interfaces.
                   </p>
                 </div>
               )}
@@ -1938,21 +1946,12 @@ function App() {
         </div>
       </div>
 
-      <LocalMp3Panel selection={localSelection} isMobile={isMobile}
-        onSelect={selection => {
-          localAudioActiveRef.current = true
-          isCheckingTimeRef.current = false
-          if (checkIntervalRef.current) clearTimeout(checkIntervalRef.current)
-          player?.pauseVideo?.()
-          setIsPlaying(false)
-          setHasBeenStopped(false)
-          setCurrentLoops(0)
-          clearSavedLoopTimes()
-          setLocalSelection(selection)
-        }}
-        onClose={() => setLocalSelection(null)} />
+      {!isMobile && localSelection && (
+        <LocalMp3Player selection={localSelection} isMobile={isMobile}
+          onClose={() => setLocalSelection(null)} />
+      )}
 
-      <div className="youtube-workspace" hidden={!!localSelection}>
+      <div className="youtube-workspace" hidden={!!localSelection && !isMobile}>
       <div className="input-group">
         {/* Mobile buttons row - shown only on mobile */}
         <div className="mobile-buttons-row">
@@ -2134,7 +2133,20 @@ function App() {
         {/* Desktop layout - label and buttons side by side */}
         <div className="desktop-label-buttons" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <label htmlFor="video-id">URL or Video ID of song from YouTube</label>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div className="desktop-action-buttons" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {!isMobile && (
+              <LocalMp3Library onSelect={selection => {
+                localAudioActiveRef.current = true
+                isCheckingTimeRef.current = false
+                if (checkIntervalRef.current) clearTimeout(checkIntervalRef.current)
+                player?.pauseVideo?.()
+                setIsPlaying(false)
+                setHasBeenStopped(false)
+                setCurrentLoops(0)
+                clearSavedLoopTimes()
+                setLocalSelection(selection)
+              }} />
+            )}
             <div className="default-video-controls">
               {player && (
                 <button

@@ -6,7 +6,7 @@ describe('HelpPanel', () => {
   it('explains the local MP3 workflow without showing details by default', () => {
     render(<HelpPanel />)
 
-    expect(screen.getByText('Paste a YouTube link or import an MP3 from your computer')).toBeInTheDocument()
+    expect(screen.getByText('Paste a YouTube link or import a desktop MP3')).toBeInTheDocument()
     expect(screen.queryByText('Practice with a local MP3')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Show details' }))

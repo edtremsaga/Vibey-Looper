@@ -1,4 +1,5 @@
 .local-mp3-section { margin: 24px 0; }
+.local-mp3-trigger { white-space: nowrap; }
 .local-mp3-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .local-mp3-hint { color: #aaa; font-size: 0.85rem; line-height: 1.5; }
 .local-mp3-dialog { box-sizing: border-box; width: min(680px, calc(100% - 24px)); max-height: 85vh; overflow: auto; color: #eee; background: #111; border: 2px solid #888; border-radius: 8px; padding: 24px; margin: auto; }

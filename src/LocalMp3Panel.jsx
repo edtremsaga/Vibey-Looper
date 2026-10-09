@@ -18,7 +18,7 @@ const formatTime = value => {
   return `${minutes}:${Number(seconds) < 10 ? '0' : ''}${seconds || '0'}`
 }
 
-export default function LocalMp3Panel({ selection, onSelect, onClose, isMobile }) {
+export function LocalMp3Library({ onSelect }) {
   const [open, setOpen] = useState(false)
   const [recordings, setRecordings] = useState([])
   const [loops, setLoops] = useState(loadLocalLoops)
@@ -37,6 +37,7 @@ export default function LocalMp3Panel({ selection, onSelect, onClose, isMobile }
   useEffect(() => {
     if (!open) return
     dialogRef.current.showModal()
+    setLoops(loadLocalLoops())
     let current = true
     listRecordings().then(items => { if (current) setRecordings(items) })
       .catch(() => { if (current) setMessage('Could not read browser storage. Check your browser storage settings.') })
@@ -79,14 +80,8 @@ export default function LocalMp3Panel({ selection, onSelect, onClose, isMobile }
     closeDialog()
   }
 
-  return <section className="local-mp3-section" aria-label="Local MP3s">
-    <div className="local-mp3-toolbar">
-      <button ref={triggerRef} type="button" className="btn-save-loop" onClick={() => { setMessage(''); setOpen(true) }}>Local MP3s</button>
-      {selection && <button type="button" className="btn-save-loop" onClick={onClose}>Return to YouTube</button>}
-    </div>
-    {!selection && <p className="local-mp3-hint">Or import MP3s from your computer. Audio stays in this browser.</p>}
-    {selection && <LocalAudioLooper key={selection.key} selection={selection} isMobile={isMobile}
-      onSaved={() => setLoops(loadLocalLoops())} />}
+  return <>
+    <button ref={triggerRef} type="button" className="btn-save-loop local-mp3-trigger" onClick={() => { setMessage(''); setOpen(true) }}>Local MP3s</button>
     {open && <dialog ref={dialogRef} className="local-mp3-dialog" aria-labelledby="local-mp3-title" onCancel={closeDialog}>
       <div className="local-mp3-toolbar"><h2 id="local-mp3-title">Local MP3s</h2><button type="button" onClick={closeDialog}>Close</button></div>
       <p>Choose MP3 files from a folder on your computer. Imported copies remain in this browser unless site data is cleared or evicted. They are not uploaded or synced.</p>
@@ -107,6 +102,17 @@ export default function LocalMp3Panel({ selection, onSelect, onClose, isMobile }
         </button>
       </li>)}</ul>
     </dialog>}
+  </>
+}
+
+export function LocalMp3Player({ selection, onClose, isMobile }) {
+  if (!selection) return null
+
+  return <section className="local-mp3-section local-mp3-player" aria-label="Local MP3 playback">
+    <div className="local-mp3-toolbar">
+      <button type="button" className="btn-save-loop" onClick={onClose}>Return to YouTube</button>
+    </div>
+    <LocalAudioLooper key={selection.key} selection={selection} isMobile={isMobile} />
   </section>
 }
 
@@ -195,7 +201,7 @@ export function LocalAudioLooper({ selection, isMobile, onSaved }) {
     try {
       saveLocalLoop({ recordingId: recording.id, title: recording.title, startTime, endTime,
         targetLoops: Number(target), playbackSpeed: Number(speed) })
-      onSaved()
+      onSaved?.()
       setStatus('MP3 loop saved. Open Local MP3s to load it again.')
     } catch { setError('Could not save the loop. Check available browser storage.') }
   }
