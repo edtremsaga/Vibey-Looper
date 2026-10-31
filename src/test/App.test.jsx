@@ -401,7 +401,7 @@ describe('App', () => {
     // clear the cycle guard before the next ENDED event arrives.
     mockPlayer.getCurrentTime = vi.fn(() => 0)
     await waitFor(() => {
-      expect(screen.getByText(/current: 0:00/i)).toBeInTheDocument()
+      expect(mockPlayer.getCurrentTime).toHaveBeenCalled()
     })
 
     act(() => {

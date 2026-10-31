@@ -47,6 +47,17 @@ type CacheEntry<T> = {
 }
 
 const cache = new Map<string, CacheEntry<unknown>>()
+type SearchResponse = { status: number; body: { items?: SearchResultItem[]; error?: string } }
+const inFlight = new Map<string, Promise<SearchResponse>>()
+const MAX_QUERY_LENGTH = 200
+const MAX_CACHE_ENTRIES = 512
+const MAX_CONCURRENT_SEARCHES = 8
+const REQUEST_TIMEOUT_MS = 8000
+// A bounded, process-local guard. Vercel Firewall must enforce deployment-wide limits.
+const RATE_WINDOW_MS = 60_000
+const MAX_REQUESTS_PER_WINDOW = 60
+let rateWindowStart = Date.now()
+let requestCount = 0
 const SEARCH_RESULTS_TTL_MS = 5 * 60 * 1000
 const DURATION_TTL_MS = 60 * 60 * 1000
 
@@ -54,11 +65,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-store')
 
   if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET')
     res.status(405).json({ error: 'Method not allowed' })
     return
   }
 
-  const rawQuery = Array.isArray(req.query?.q) ? req.query?.q[0] : req.query?.q
+  if (Array.isArray(req.query?.q) || (req.query?.q !== undefined && typeof req.query.q !== 'string')) {
+    res.status(400).json({ error: 'Provide one search query' })
+    return
+  }
+  const rawQuery = req.query?.q
   const query = rawQuery?.trim() ?? ''
 
   if (!query) {
@@ -66,13 +82,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
+  if (query.length > MAX_QUERY_LENGTH) {
+    res.status(400).json({ error: 'Search query is too long' })
+    return
+  }
+
+  const now = Date.now()
+  if (now - rateWindowStart >= RATE_WINDOW_MS) {
+    rateWindowStart = now
+    requestCount = 0
+  }
+  if (requestCount >= MAX_REQUESTS_PER_WINDOW) {
+    res.setHeader('Retry-After', String(Math.max(1, Math.ceil((rateWindowStart + RATE_WINDOW_MS - now) / 1000))))
+    res.status(429).json({ error: 'Too many searches' })
+    return
+  }
+  requestCount += 1
+
   const apiKey = process.env.YOUTUBE_API_KEY
   if (!apiKey) {
     res.status(500).json({ error: 'Missing YouTube API key' })
     return
   }
 
-  const youtubeQuery = /\bofficial\b/i.test(query) ? query : `${query} official`
   const searchCacheKey = `search:${query.toLowerCase()}`
   const cachedSearchResults = getCachedValue<SearchResultItem[]>(searchCacheKey)
 
@@ -81,6 +113,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
+  let pending = inFlight.get(searchCacheKey)
+  if (!pending) {
+    if (inFlight.size >= MAX_CONCURRENT_SEARCHES) {
+      res.setHeader('Retry-After', '8')
+      res.status(429).json({ error: 'Too many searches' })
+      return
+    }
+    pending = searchYouTube(query, apiKey, searchCacheKey)
+    inFlight.set(searchCacheKey, pending)
+  }
+  try {
+    const result = await pending
+    if (result.status === 429) res.setHeader('Retry-After', '60')
+    res.status(result.status).json(result.body)
+  } finally {
+    if (inFlight.get(searchCacheKey) === pending) inFlight.delete(searchCacheKey)
+  }
+}
+
+async function searchYouTube(query: string, apiKey: string, searchCacheKey: string): Promise<SearchResponse> {
+  const youtubeQuery = /\bofficial\b/i.test(query) ? query : `${query} official`
+  const controller = new AbortController()
+  // One deadline covers both upstream requests, including response-body reads.
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
   try {
     const searchParams = new URLSearchParams({
       part: 'snippet',
@@ -92,19 +148,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const searchResponse = await fetch(
       `https://www.googleapis.com/youtube/v3/search?${searchParams.toString()}`,
-      { cache: 'no-store' }
+      { cache: 'no-store', signal: controller.signal }
     )
 
     if (!searchResponse.ok) {
       const body = await searchResponse.json().catch(() => null)
       const reason = body?.error?.errors?.[0]?.reason
       if (searchResponse.status === 429 || reason === 'quotaExceeded' || reason === 'rateLimitExceeded') {
-        res.status(429).json({ error: 'Rate limit' })
-        return
+        return { status: 429, body: { error: 'Rate limit' } }
       }
 
-      res.status(502).json({ error: 'Search failed' })
-      return
+      return { status: 502, body: { error: 'Search failed' } }
     }
 
     const searchData = (await searchResponse.json()) as { items?: YouTubeSearchItem[] }
@@ -115,8 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (videoIds.length === 0) {
       setCachedValue(searchCacheKey, [], SEARCH_RESULTS_TTL_MS)
-      res.status(200).json({ items: [] })
-      return
+      return { status: 200, body: { items: [] } }
     }
 
     const durationById = new Map<string, string>()
@@ -140,7 +193,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const videosResponse = await fetch(
         `https://www.googleapis.com/youtube/v3/videos?${videosParams.toString()}`,
-        { cache: 'no-store' }
+        { cache: 'no-store', signal: controller.signal }
       )
 
       if (videosResponse.ok) {
@@ -180,9 +233,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .filter((item): item is NonNullable<typeof item> => item !== null)
 
     setCachedValue(searchCacheKey, items, SEARCH_RESULTS_TTL_MS)
-    res.status(200).json({ items })
+    return { status: 200, body: { items } }
   } catch {
-    res.status(500).json({ error: 'Search failed' })
+    return { status: controller.signal.aborted ? 504 : 502, body: { error: 'Search failed' } }
+  } finally {
+    clearTimeout(timeout)
   }
 }
 
@@ -201,6 +256,14 @@ function getCachedValue<T>(key: string): T | null {
 }
 
 function setCachedValue<T>(key: string, value: T, ttlMs: number) {
+  const now = Date.now()
+  for (const [cachedKey, entry] of cache) {
+    if (entry.expiresAt <= now) cache.delete(cachedKey)
+  }
+  cache.delete(key)
+  while (cache.size >= MAX_CACHE_ENTRIES) {
+    cache.delete(cache.keys().next().value!)
+  }
   cache.set(key, {
     value,
     expiresAt: Date.now() + ttlMs,

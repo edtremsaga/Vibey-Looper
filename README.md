@@ -85,20 +85,46 @@ git clone https://github.com/edtremsaga/Vibey-Looper.git
 cd Vibey-Looper
 ```
 
-2. Install dependencies:
+2. Select the patched Node.js runtime (install Node 24.22.2 with nvm first if needed):
+```bash
+nvm use
+node --version
+```
+
+3. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Run development server:
+4. Run development server:
 ```bash
 npm run dev
 ```
 
-4. Build for production:
+5. Build for production:
 ```bash
 npm run build
 ```
+
+Development and preview servers bind to `127.0.0.1` by default. For intentional
+phone testing on a trusted network, use `npm run dev:network` or
+`npm run preview:network`; stop the server when finished.
+
+`npm run dev` serves the frontend only. YouTube search requires `npx vercel dev`
+and a server-only `YOUTUBE_API_KEY` in `.env.local`. Never use a `VITE_` prefix for this key.
+
+The search endpoint accepts a single query up to 200 characters. Each running
+instance permits 60 non-empty valid requests per minute and at most 8 distinct
+upstream searches at once. Identical concurrent searches share a request; both
+YouTube calls share an 8-second deadline. The cache holds at most 512 entries.
+These memory limits reset on cold starts and are **not shared across instances**.
+Before deployment, verify Vercel's actual Node.js patch version and configure or
+verify hosting-wide request limits/provider quotas separately. The `engines`
+field requests Node 24; it does not prove which patch Vercel is running.
+
+Run the full automated suite with `npm test` and build with `npm run build`.
+API tests mock YouTube and consume no provider quota. Real YouTube/iPhone playback
+and microphone permissions still require manual verification.
 
 ## Project Structure
 
