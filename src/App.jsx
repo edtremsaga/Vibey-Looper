@@ -6,7 +6,6 @@ import { BREAKPOINTS, TIME_LIMITS, LOOP_LIMITS, STRING_LIMITS, YOUTUBE, DEFAULTS
 import SetList from './SetList.jsx'
 import HelpPanel from './HelpPanel.jsx'
 import { LocalMp3Library, LocalMp3Player } from './LocalMp3Panel.jsx'
-import BackupControls from './BackupControls.jsx'
 
 // App default video (fallback)
 const APP_DEFAULT_VIDEO = 'https://www.youtube.com/watch?v=u7p8bkf5hBY&list=RDu7p8bkf5hBY&start_radio=1'
@@ -2751,7 +2750,6 @@ function App() {
       </div>
 
       {/* Help and Feedback links at bottom */}
-      <BackupControls />
       <div className="help-link-bottom">
         <button className="help-link-text" onClick={() => setShowHelp(true)}>
           help
