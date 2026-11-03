@@ -1737,6 +1737,7 @@ input[type="range"]:focus-visible {
   grid-template-columns: 1.625fr 1.625fr 0.7fr 0.55fr;
   gap: 15px;
   width: 100%;
+  margin-top: 12px;
   margin-bottom: 2px;
   align-items: start;
 }
@@ -2080,6 +2081,7 @@ input[type="range"]:focus-visible {
   justify-content: center;
   width: 100%;
   margin-top: 5px;
+  margin-bottom: 14px;
 }
 
 .button-row-wrapper {
@@ -2169,6 +2171,8 @@ input[type="range"]:focus-visible {
   box-shadow: 6px 6px 0px #990000;
   width: 100%;
   max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
   border-radius: 0;
 }
 
@@ -2208,6 +2212,8 @@ input[type="range"]:focus-visible {
 .progress-container {
   width: 100%;
   max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
   margin-top: 8px;
   margin-bottom: 20px;
 }
